@@ -1,4 +1,4 @@
-# 🎓 <a href="">LuPO Web </a>- NRW Oberstufen-Planung im Browser
+# 🎓 <a href="https://codekoch.github.io/LupoWeb/lupo_web.html">LuPO Web </a>- NRW Oberstufen-Planung im Browser
 
 Eine webbasierte, systemunabhängige Alternative zum offiziellen LuPO-Programm für die Laufbahnberatung in der gymnasialen Oberstufe (NRW).
 
@@ -20,14 +20,14 @@ Dieses Projekt entstand ursprünglich als "Proof of Concept" mit Unterstützung 
 ✨ Features
 Das Projekt besteht aus zwei Hauptkomponenten:
 
-1. Lehrer-Manager (<a href="">lupo_web.html</a>)
+1. Lehrer-Manager (<a href="https://codekoch.github.io/LupoWeb/lupo_web.html">lupo_web.html</a>)
 Konfiguration: Aktivieren/Deaktivieren von Fächern, Festlegen von Stundenzahlen, Start-/Endphasen und Zusatzkursen.
 
 Regelwerk: Definition von "Verbotenen Fächerkombinationen" (z.B. Religionslehre vs. Philosophie).
 
 Export: Generiert per Knopfdruck die Schüler-Version als eigenständige HTML-Datei, die genau auf das Schulprofil zugeschnitten ist.
 
-2. Schüler-Wahl & Abirechner (<a href="">lupo_schueler_wahl.html</a>)
+2. Schüler-Wahl & Abirechner (<a href="https://codekoch.github.io/LupoWeb/lupo_schueler_wahl.html">lupo_schueler_wahl.html</a>)
 Laufbahnplanung: Interaktive Wahl von EF.1 bis Q2.2.
 
 Validierung: Prüft live gegen gängige Belegungsverpflichtungen (z.B. "Kunst/Musik in Q1", "Durchgehende Fremdsprache", "Schwerpunkt", "Anzahl LKs").
