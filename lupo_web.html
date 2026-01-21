@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuPOWeb - Simulation mit Abiturzulassungsrechner</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .cell-select {
+            appearance: none;
+            text-align: center;
+            font-size: 0.75rem;
+        }
+
+        .grade-input {
+            text-align: center;
+            font-size: 0.8rem;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        .grade-input:focus {
+            outline: 2px solid #3b82f6;
+            background: white;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar-thumb,
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .disabled-cell {
+            background-color: #f3f4f6;
+            color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+        .field-row-I {
+            background-color: #dcfce7;
+            color: #166534;
+            border-bottom: 1px solid #86efac;
+        }
+
+        .field-row-II {
+            background-color: #ffedd5;
+            color: #9a3412;
+            border-bottom: 1px solid #fdba74;
+        }
+
+        .field-row-III {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border-bottom: 1px solid #93c5fd;
+        }
+
+        .field-row-Sport {
+            background-color: #f1f5f9;
+            color: #334155;
+            border-bottom: 1px solid #cbd5e1;
+        }
+
+        /* Checkbox styling for inclusion */
+        .inclusion-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS ---
+        const IconWrapper = ({ children, size = 16, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+        const Icons = {
+            Settings: (p) => <IconWrapper {...p}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></IconWrapper>,
+            Users: (p) => <IconWrapper {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></IconWrapper>,
+            BookOpen: (p) => <IconWrapper {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></IconWrapper>,
+            Ban: (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"></circle><path d="m4.9 4.9 14.2 14.2"></path></IconWrapper>,
+            AlertTriangle: (p) => <IconWrapper {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></IconWrapper>,
+            Download: (p) => <IconWrapper {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></IconWrapper>,
+            Calculator: (p) => <IconWrapper {...p}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></IconWrapper>,
+            CheckCircle: (p) => <IconWrapper {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></IconWrapper>
+        };
+
+        const PHASES = ['EF.1', 'EF.2', 'Q1.1', 'Q1.2', 'Q2.1', 'Q2.2'];
+        const FIELDS = { I: 'Sprachlich-literarisch-künstlerisch', II: 'Gesellschaftswissenschaftlich', III: 'Mathematisch-naturwissenschaftlich-technisch', Sport: 'Sport', Sonstiges: 'Sonstiges' };
+        const FIELD_COLORS = { I: 'field-row-I', II: 'field-row-II', III: 'field-row-III', Sport: 'field-row-Sport', Sonstiges: 'bg-gray-200 text-gray-800 border-b border-gray-300' };
+
+        // Default constraints for hours
+        const HOURS_DEF = { EF: 3, Q: 3, LK: 5, ZK: 3 };
+
+        const INITIAL_SUBJECTS = [
+            { code: 'D', name: 'Deutsch', field: 'I', type: 'core', hours: { ...HOURS_DEF } },
+            { code: 'E', name: 'Englisch', field: 'I', type: 'lang', hours: { ...HOURS_DEF } },
+            { code: 'F', name: 'Französisch', field: 'I', type: 'lang', hours: { ...HOURS_DEF } },
+            { code: 'L', name: 'Latein', field: 'I', type: 'lang', hours: { ...HOURS_DEF } },
+            { code: 'S', name: 'Spanisch', field: 'I', type: 'lang', hours: { ...HOURS_DEF, EF: 4 } },
+            { code: 'I', name: 'Italienisch', field: 'I', type: 'lang', hours: { ...HOURS_DEF, EF: 4 } },
+            { code: 'KU', name: 'Kunst', field: 'I', type: 'art', hours: { ...HOURS_DEF } },
+            { code: 'MU', name: 'Musik', field: 'I', type: 'art', hours: { ...HOURS_DEF } },
+            { code: 'LIT', name: 'Literatur', field: 'I', type: 'art', hours: { ...HOURS_DEF } },
+            { code: 'VP', name: 'Vokalpraxis', field: 'I', type: 'art', hours: { ...HOURS_DEF } },
+            { code: 'GE', name: 'Geschichte', field: 'II', type: 'social', hours: { ...HOURS_DEF } },
+            { code: 'SW', name: 'Sozialwissenschaften', field: 'II', type: 'social', hours: { ...HOURS_DEF } },
+            { code: 'EK', name: 'Erdkunde', field: 'II', type: 'social', hours: { ...HOURS_DEF } },
+            { code: 'PA', name: 'Pädagogik', field: 'II', type: 'social', hours: { ...HOURS_DEF } },
+            { code: 'PL', name: 'Philosophie', field: 'II', type: 'religion', hours: { ...HOURS_DEF } },
+            { code: 'KR', name: 'Religion (Kath)', field: 'II', type: 'religion', hours: { ...HOURS_DEF } },
+            { code: 'ER', name: 'Religion (Ev)', field: 'II', type: 'religion', hours: { ...HOURS_DEF } },
+            { code: 'M', name: 'Mathematik', field: 'III', type: 'core', hours: { ...HOURS_DEF } },
+            { code: 'BI', name: 'Biologie', field: 'III', type: 'science', hours: { ...HOURS_DEF } },
+            { code: 'PH', name: 'Physik', field: 'III', type: 'science', hours: { ...HOURS_DEF } },
+            { code: 'CH', name: 'Chemie', field: 'III', type: 'science', hours: { ...HOURS_DEF } },
+            { code: 'IF', name: 'Informatik', field: 'III', type: 'science', hours: { ...HOURS_DEF } },
+            { code: 'VX-D', name: 'Vertiefung D', field: 'Sonstiges', type: 'misc', hours: { EF: 2, Q: 0, LK: 0, ZK: 0 } },
+            { code: 'VX-E', name: 'Vertiefung E', field: 'Sonstiges', type: 'misc', hours: { EF: 2, Q: 0, LK: 0, ZK: 0 } },
+            { code: 'VX-M', name: 'Vertiefung M', field: 'Sonstiges', type: 'misc', hours: { EF: 2, Q: 0, LK: 0, ZK: 0 } },
+            { code: 'SP', name: 'Sport', field: 'Sport', type: 'sport', hours: { ...HOURS_DEF } },
+        ];
+
+        const COURSE_OPTS = [
+            { val: '', label: '-' }, { val: 'M', label: 'M' },
+            { val: 'S', label: 'S' }, { val: 'LK', label: 'LK' },
+            { val: 'ZK', label: 'ZK' }
+        ];
+
+        const DEFAULT_CONFIG = {
+            activeSubjects: INITIAL_SUBJECTS.reduce((acc, s) => ({ ...acc, [s.code]: s.code !== 'VP' }), {}),
+            zkAllowed: INITIAL_SUBJECTS.reduce((acc, s) => ({ ...acc, [s.code]: ['GE', 'SW'].includes(s.code) }), {}),
+            startPhase: INITIAL_SUBJECTS.reduce((acc, s) => {
+                let start = 0;
+                if (['LIT', 'VP'].includes(s.code)) start = 2;
+                return { ...acc, [s.code]: start };
+            }, {}),
+            endPhase: INITIAL_SUBJECTS.reduce((acc, s) => {
+                let end = 5;
+                if (s.code === 'LIT') end = 3;
+                if (s.code.startsWith('VX')) end = 1;
+                return { ...acc, [s.code]: end };
+            }, {}),
+            forbiddenPairs: [
+                { a: 'KR', b: 'ER' }, { a: 'KR', b: 'PL' }, { a: 'ER', b: 'PL' },
+                { a: 'MU', b: 'KU' }, { a: 'LIT', b: 'MU' }, { a: 'LIT', b: 'KU' }
+            ]
+        };
+
+        const VALIDATION_LOGIC = `
+            const msgs = [];
+            const hours = Array(6).fill(0);
+            const counts = Array(6).fill(0);
+            const activeSubs = SUBJECTS_LIST.filter(s => CONFIG.activeSubjects[s.code]);
+            let cntLang = 0; let cntSci = 0;
+
+            // --- Calculation Pass ---
+            activeSubs.forEach(sub => {
+                const row = selections[sub.code];
+                const inQ1 = row[2] !== '' || row[3] !== '';
+                const inQ2 = row[4] !== '' || row[5] !== '';
+                
+                if (inQ1 && inQ2) {
+                     if(sub.type === 'lang') cntLang++;
+                     if(sub.type === 'science') cntSci++;
+                }
+
+                row.forEach((val, idx) => {
+                    if (!val) return;
+                    if (idx < CONFIG.startPhase[sub.code] || idx > CONFIG.endPhase[sub.code]) return;
+                    counts[idx]++;
+                    
+                    const h = sub.hours || { EF: 3, Q: 3, LK: 5, ZK: 3 };
+                    
+                    if (val === 'LK') hours[idx] += h.LK;
+                    else if (val === 'ZK') hours[idx] += h.ZK;
+                    else if (['S', 'M'].includes(val)) {
+                         if (idx < 2) { // EF
+                            hours[idx] += h.EF;
+                         } else { // Q-Phase
+                            hours[idx] += h.Q;
+                         }
+                    }
+                });
+            });
+
+            // --- Weekly Hours Check ---
+            const avgEF = (hours[0] + hours[1]) / 2;
+            const avgQ1 = (hours[2] + hours[3]) / 2;
+            const avgQ2 = (hours[4] + hours[5]) / 2;
+            const totalAvg = avgEF + avgQ1 + avgQ2;
+
+            if (avgEF < 34) msgs.push("Warnung: In EF durchschnittlich weniger als 34 Wochenstunden.");
+            if (avgQ1 < 34) msgs.push("Warnung: In Q1 durchschnittlich weniger als 34 Wochenstunden.");
+            if (avgQ2 < 34) msgs.push("Warnung: In Q2 durchschnittlich weniger als 34 Wochenstunden.");
+            if ((hours[0]+hours[1]+hours[2]+hours[3]+hours[4]+hours[5]) < 102) msgs.push("Fehler: Insgesamt fehlen Wochenstunden (Mind. 102 über 3 Jahre).");
+            if (Math.max(avgEF, avgQ1, avgQ2) > 40) msgs.push("Warnung: Sehr hohe Wochenstundenzahl (>40).");
+
+            // --- Basic Continuity Checks ---
+            ['D', 'M', 'SP'].forEach(code => {
+                if (CONFIG.activeSubjects[code]) {
+                    const subjObj = SUBJECTS_LIST.find(s=>s.code===code);
+                    if (subjObj && selections[code] && selections[code].some((c, i) => i >= CONFIG.startPhase[code] && i <= CONFIG.endPhase[code] && c === '')) 
+                        msgs.push("Fehler: " + subjObj.name + " muss durchgehend belegt werden.");
+                 }
+            });
+
+            // --- Art / Music / Lit ---
+            const hasArtEF = ['KU', 'MU'].some(code => CONFIG.activeSubjects[code] && selections[code][0] !== '' && selections[code][1] !== '');
+            if (!hasArtEF) msgs.push("Fehler: Kunst oder Musik muss in der EF belegt werden.");
+            
+            const hasArtQ1 = ['KU', 'MU', 'LIT', 'VP'].some(code => CONFIG.activeSubjects[code] && selections[code][2] !== '' && selections[code][3] !== '');
+            if (!hasArtQ1) msgs.push("Fehler: In Q1 (Q1.1 & Q1.2) muss Kunst, Musik oder Literatur belegt sein.");
+
+            // --- Sciences ---
+            const classicalNW = ['BI', 'PH', 'CH'];
+            const hasClassNW = classicalNW.some(code => CONFIG.activeSubjects[code] && selections[code].every(c => c !== ''));
+            if (!hasClassNW) msgs.push("Fehler: Eine klassische Naturwissenschaft (Bi, Ph, Ch) muss durchgehend belegt sein.");
+
+            // --- Languages ---
+            const hasLang = activeSubs.filter(s => s.type === 'lang').some(s => selections[s.code].every(c => c !== ''));
+            if (!hasLang) msgs.push("Fehler: Mindestens eine Fremdsprache muss durchgehend belegt sein.");
+            
+            // --- Focus (Schwerpunkt) ---
+            if (cntLang < 2 && cntSci < 2) msgs.push("Fehler: Schwerpunkt fehlt (2 FS oder 2 NW/IF in Q-Phase).");
+
+            // --- Religion / Philo ---
+            const relCheck = [0,1,2,3,4,5].every(idx => {
+                return (CONFIG.activeSubjects['KR'] && selections['KR'][idx]) || 
+                       (CONFIG.activeSubjects['ER'] && selections['ER'][idx]) || 
+                       (CONFIG.activeSubjects['PL'] && selections['PL'][idx]);
+            });
+            if (!relCheck) msgs.push("Warnung: Religion oder Philosophie muss i.d.R. durchgehend belegt sein.");
+
+            // --- Social Sciences (GE / SW) ---
+            ['GE', 'SW'].forEach(code => {
+                if (CONFIG.activeSubjects[code]) {
+                    const row = selections[code];
+                    const inQ1 = row[2] !== '' && row[3] !== '';
+                    const isZK_Q2 = row[4] === 'ZK' && row[5] === 'ZK';
+                    const sName = SUBJECTS_LIST.find(s=>s.code===code)?.name || code;
+                    if (!inQ1 && !isZK_Q2) msgs.push("Fehler: " + sName + " muss in Q1 belegt sein oder als Zusatzkurs in Q2.");
+                }
+            });
+
+            // --- LKs count ---
+            const countLKs = (idx) => activeSubs.map(s => selections[s.code][idx] === 'LK' ? 1 : 0).reduce((a,b)=>a+b, 0);
+            if (countLKs(2) !== 2) msgs.push("Fehler: In der Q-Phase müssen genau 2 Leistungskurse gewählt werden.");
+
+            // --- ABI CHECK (APO-GOSt §12) ---
+            const abis = [abiSubjects[1], abiSubjects[2], abiSubjects[3], abiSubjects[4]].filter(Boolean);
+            if (abis.length !== 4 && abis.length > 0) {
+                 msgs.push("Fehler: Es müssen genau 4 Abiturfächer gewählt werden.");
+            } else if (abis.length === 4) {
+                 const abiSubjs = abis.map(c => SUBJECTS_LIST.find(s => s.code === c));
+                 
+                 // 1. LK Rule: FS, M, NW, D
+                 const s1 = SUBJECTS_LIST.find(s => s.code === abiSubjects[1]);
+                 const validLK1 = ['D', 'M'].includes(s1.code) || s1.type === 'lang' || s1.type === 'science';
+                 if (!validLK1) msgs.push("Abitur: 1. LK muss D, M, FS oder NW sein.");
+
+                 // 2. Core Subjects (2 of D, M, FS)
+                 const countCore = abiSubjs.filter(s => s.code === 'D' || s.code === 'M' || s.type === 'lang').length;
+                 if (countCore < 2) msgs.push("Abitur: Mind. zwei der Fächer D, M, FS müssen gewählt werden.");
+
+                 // 3. Task Fields Coverage
+                 const hasI = abiSubjs.some(s => s.field === 'I');
+                 const hasII = abiSubjs.some(s => s.field === 'II' || ['KR', 'ER'].includes(s.code)); // Rel covers II
+                 const hasIII = abiSubjs.some(s => s.field === 'III');
+                 if (!hasI) msgs.push("Abitur: Aufgabenfeld I fehlt.");
+                 if (!hasII) msgs.push("Abitur: Aufgabenfeld II fehlt.");
+                 if (!hasIII) msgs.push("Abitur: Aufgabenfeld III fehlt.");
+
+                 // Field I must be D or FS
+                 const validI = abiSubjs.some(s => s.field === 'I' && (s.code === 'D' || s.type === 'lang'));
+                 if (!validI) msgs.push("Abitur: Aufgabenfeld I muss durch Deutsch oder Fremdsprache abgedeckt sein.");
+
+                 // Conflict Rel + Sport
+                 if (abiSubjs.some(s => ['KR', 'ER'].includes(s.code)) && abiSubjs.some(s => s.code === 'SP')) {
+                     msgs.push("Abitur: Religion und Sport schließen sich als Abiturfächer aus.");
+                 }
+
+                 // Sequence Checks
+                 abis.forEach((code, i) => {
+                     const isLK = i < 2; // 0 and 1 are LK
+                     const row = selections[code];
+                     if (row.slice(2,6).some(c => c === '')) msgs.push("Abitur: Fach " + code + " muss durchgehend belegt sein.");
+                     if (isLK && row.slice(2,6).some(c => c !== 'LK')) msgs.push("Abitur: " + code + " (1./2. Fach) muss durchgehend LK sein.");
+                     const writtenRange = row.slice(2, 5);
+                     if (writtenRange.some(c => c !== 'LK' && c !== 'S')) msgs.push("Abitur: " + code + " muss bis Q2.1 schriftlich sein.");
+                 });
+            }
+
+            // --- Forbidden Pairs ---
+            CONFIG.forbiddenPairs.forEach(pair => {
+                const rowA = selections[pair.a];
+                const rowB = selections[pair.b];
+                const hasConflict = rowA.some((val, idx) => val !== '' && rowB[idx] !== '');
+                if (hasConflict) {
+                    const nameA = SUBJECTS_LIST.find(s=>s.code===pair.a)?.name || pair.a;
+                    const nameB = SUBJECTS_LIST.find(s=>s.code===pair.b)?.name || pair.b;
+                    msgs.push("Konflikt: " + nameA + " und " + nameB + " nicht gleichzeitig im selben Halbjahr.");
+                }
+            });
+
+            // --- Continuity / No Late Entry Check ---
+            activeSubs.forEach(sub => {
+                const row = selections[sub.code];
+                const start = CONFIG.startPhase[sub.code];
+                const end = CONFIG.endPhase[sub.code];
+                for (let i = 0; i < 6; i++) {
+                    if (i <= start) continue; 
+                    if (i > end) continue;
+                    const currentVal = row[i];
+                    if (currentVal !== '') {
+                        const prevVal = row[i-1];
+                        if (prevVal === '') {
+                            const isZkException = (i === 4 && currentVal === 'ZK');
+                            if (!isZkException) {
+                                msgs.push("Fehler: " + sub.name + " (" + PHASES[i] + ") darf nicht gewählt werden, wenn es im vorherigen Halbjahr nicht belegt war.");
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // --- Course Change Restriction (M -> S Block) ---
+            activeSubs.forEach(sub => {
+                const row = selections[sub.code];
+                [3, 4, 5].forEach(i => {
+                    const currentVal = row[i];
+                    const prevVal = row[i-1]; 
+                    const isWritten = (val) => val === 'S' || val === 'LK';
+                    const isOral = (val) => val === 'M';
+                    if (isWritten(currentVal) && isOral(prevVal)) {
+                         msgs.push("Fehler: " + sub.name + " (" + PHASES[i] + ") darf nicht schriftlich gewählt werden, wenn es im vorherigen Halbjahr nur mündlich belegt war.");
+                    }
+                });
+            });
+
+            // --- ZK Exclusivity Check ---
+            [4, 5].forEach(i => {
+                let zkCount = 0;
+                activeSubs.forEach(sub => {
+                    if (selections[sub.code][i] === 'ZK') zkCount++;
+                });
+                if (zkCount > 1) {
+                     msgs.push("Fehler: Es darf zu einem Zeitpunkt (" + PHASES[i] + ") nur ein Fach als Zusatzkurs (ZK) gewählt werden.");
+                }
+            });
+
+            setWarnings(msgs);
+            setStats({ totalHours: hours, courseCount: counts });
+        `;
+
+        // Split template to avoid "unterminated template" errors with Babel Standalone
+        const getStudentHTMLTemplate = (config, subjects) => {
+            const part1 = `<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuPOWeb - Schülerwahl</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"><\/script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"><\/script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; overflow: hidden; }
+        .cell-select { appearance: none; text-align: center; font-size: 0.75rem; }
+        .overflow-x-auto::-webkit-scrollbar { height: 8px; }
+        .overflow-y-auto::-webkit-scrollbar { width: 8px; }
+        .overflow-x-auto::-webkit-scrollbar-thumb, .overflow-y-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .disabled-cell { background-color: #f3f4f6; color: #d1d5db; cursor: not-allowed; }
+        .field-row-I { background-color: #dcfce7; color: #166534; border-bottom: 1px solid #86efac; }
+        .field-row-II { background-color: #ffedd5; color: #9a3412; border-bottom: 1px solid #fdba74; }
+        .field-row-III { background-color: #dbeafe; color: #1e40af; border-bottom: 1px solid #93c5fd; }
+        .field-row-Sport { background-color: #f1f5f9; color: #334155; border-bottom: 1px solid #cbd5e1; }
+        .grade-input { text-align: center; font-size: 0.8rem; width: 100%; height: 100%; background: transparent; }
+        .grade-input:focus { outline: 2px solid #3b82f6; background: white; }
+        .inclusion-checkbox { width: 14px; height: 14px; cursor: pointer; }
+        
+        @media print {
+            @page { size: A4; margin: 1cm; }
+            body { background: white; overflow: visible !important; height: auto !important; }
+            #root { height: auto !important; }
+            header button, header input, header .print-hide { display: none !important; }
+            header { background: white !important; color: black !important; border-bottom: 2px solid black; padding: 0 !important; margin-bottom: 1cm; position: relative !important; }
+            header h1 { color: black !important; font-size: 16pt !important; }
+            header span { color: #333 !important; }
+            
+            .main-content, .sidebar-panel { width: 100% !important; border: none !important; overflow: visible !important; height: auto !important; display: block !important; }
+            .sidebar-panel { margin-top: 1cm; page-break-inside: avoid; }
+            
+            .flex-col, .flex-row, .flex { display: block !important; }
+            .h-screen { height: auto !important; }
+            .overflow-auto, .overflow-hidden, .overflow-y-auto { overflow: visible !important; height: auto !important; }
+            
+            table { width: 100% !important; font-size: 10px !important; }
+            td, th { padding: 2px !important; height: auto !important; border: 1px solid #ddd !important; }
+            
+            .cell-select { appearance: none; -moz-appearance: none; -webkit-appearance: none; border: none; background: transparent !important; padding: 0; }
+            select::-ms-expand { display: none; }
+            
+            button { display: none !important; }
+            ::-webkit-scrollbar { display: none; }
+            .sticky { position: static !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+
+        const { useState, useEffect, useRef } = React;
+
+        const IconWrapper = ({ children, size = 16, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+        const Icons = {
+            Settings: (p) => <IconWrapper {...p}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></IconWrapper>,
+            Users: (p) => <IconWrapper {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></IconWrapper>,
+            BookOpen: (p) => <IconWrapper {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></IconWrapper>,
+            Ban: (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"></circle><path d="m4.9 4.9 14.2 14.2"></path></IconWrapper>,
+            AlertTriangle: (p) => <IconWrapper {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></IconWrapper>,
+            Download: (p) => <IconWrapper {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></IconWrapper>,
+            Calculator: (p) => <IconWrapper {...p}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></IconWrapper>,
+            CheckCircle: (p) => <IconWrapper {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></IconWrapper>
+        };
+        const CONFIG = ${JSON.stringify(config)};
+        const PHASES = ['EF.1', 'EF.2', 'Q1.1', 'Q1.2', 'Q2.1', 'Q2.2'];
+        const FIELDS = ${JSON.stringify(FIELDS)};
+        const FIELD_COLORS = ${JSON.stringify(FIELD_COLORS)};
+        const INITIAL_SUBJECTS = ${JSON.stringify(subjects)};
+        const SUBJECTS_LIST = INITIAL_SUBJECTS;
+        const Q_PHASES = ['Q1.1', 'Q1.2', 'Q2.1', 'Q2.2'];
+
+        const COURSE_OPTS = [
+            { val: '', label: '-' }, { val: 'M', label: 'M' },
+            { val: 'S', label: 'S' }, { val: 'LK', label: 'LK' },
+            { val: 'ZK', label: 'ZK' }
+        ];
+
+        const AdmissionCalculator = ({ selections, abiSubjects, subjects, grades, setGrades, inclusions, setInclusions }) => {
+            const [results, setResults] = useState({ 
+                block1Sum: 0, 
+                block1Count: 0, 
+                avg: 0, 
+                deficits: 0, 
+                lkDeficits: 0, 
+                qualified: false, 
+                messages: [] 
+            });
+
+            const getCourseType = (subCode, qIdx) => {
+                const globalIdx = qIdx + 2; 
+                return selections[subCode][globalIdx];
+            };
+            
+            // Ermittelt Pflichtkurse gemäß APO-B
+            const getMandatoryStatus = (subCode, qIdx) => {
+                const type = getCourseType(subCode, qIdx);
+                if (!type) return false;
+                
+                // 1. Abiturfächer
+                if (Object.values(abiSubjects).includes(subCode)) return true;
+                
+                const sub = subjects.find(s => s.code === subCode);
+                if (!sub) return false;
+
+                // 2. Deutsch
+                if (subCode === 'D') return true;
+
+                // 3. Fremdsprachen
+                // Heuristik: Wenn dies die einzige belegte FS in Q ist -> Pflicht.
+                // APO-B: Eine FS durchgehend.
+                const allLangs = subjects.filter(s => s.type === 'lang' && selections[s.code].slice(2,6).some(v => v));
+                // Wenn nur eine Sprache belegt ist, ist sie Pflicht.
+                if (allLangs.length === 1 && allLangs[0].code === subCode) return true;
+                // Wenn 'neu einsetzend' (z.B. S, I, oder startPhase > 0) und keine 2. FS in Sek I -> Pflicht. (Vereinfacht: Alle durchgehenden FS markieren wir mal als Kandidaten, aber APO sagt mind. 1. Wir forcieren hier erstmal die, die Abifach sind, ansonsten lassen wir Wahl, außer es gibt nur eine).
+                
+                // 4. Mathe
+                if (subCode === 'M') return true;
+
+                // 5. Naturwissenschaft (BI, PH, CH)
+                // Ähnlich wie Sprachen: Eine muss durchgehend sein.
+                const allSci = subjects.filter(s => ['BI','PH','CH'].includes(s.code) && selections[s.code].slice(2,6).some(v => v));
+                if (allSci.length === 1 && allSci[0].code === subCode) return true;
+                
+                // 6. Gesellschaftswissenschaft
+                const allSocial = subjects.filter(s => s.field === 'II' && s.type !== 'religion' && selections[s.code].slice(2,6).some(v => v));
+                 // Eine durchgehend?
+                 // Zusatzkurse GE/SW in Q2 sind Pflicht wenn nicht in Q1 belegt.
+                if ((subCode === 'GE' || subCode === 'SW') && type === 'ZK') return true;
+                if (allSocial.length === 1 && allSocial[0].code === subCode) return true;
+                
+                // 7. Kunst/Musik (2 Kurse, meist Q1)
+                // Hier etwas schwieriger zu erzwingen. Wir lassen es oft als "Default on" aber abwählbar, außer es ist die einzige.
+                
+                // 8. Reli
+                // Mind. 2 Kurse.
+                
+                return false;
+            };
+
+            // Initialisiere oder Update Inclusions basierend auf Pflicht
+            useEffect(() => {
+                const newInclusions = { ...inclusions };
+                let changed = false;
+                subjects.forEach(sub => {
+                    if (!newInclusions[sub.code]) newInclusions[sub.code] = [false, false, false, false];
+                    for (let i = 0; i < 4; i++) {
+                        const type = getCourseType(sub.code, i);
+                        if (type) {
+                            const isMan = getMandatoryStatus(sub.code, i);
+                            if (isMan && !newInclusions[sub.code][i]) {
+                                newInclusions[sub.code][i] = true;
+                                changed = true;
+                            }
+                        } else {
+                            if (newInclusions[sub.code][i]) {
+                                newInclusions[sub.code][i] = false;
+                                changed = true;
+                            }
+                        }
+                    }
+                });
+                if (changed) setInclusions(newInclusions);
+            }, [selections, abiSubjects]);
+
+            // Berechne Block I
+            useEffect(() => {
+                let P = 0; // Punkte
+                let S = 0; // Schulhalbjahresergebnisse (Anzahl)
+                let defs = 0;
+                let lkDefs = 0;
+                let countCourses = 0;
+                let sportCount = 0;
+                let zeroPointCourseIncluded = false;
+                
+                subjects.forEach(sub => {
+                    const incRow = inclusions[sub.code] || [false,false,false,false];
+                    const gradeRow = grades[sub.code] || [null,null,null,null];
+                    
+                    for(let i=0; i<4; i++) {
+                        if (incRow[i]) {
+                            const points = parseInt(gradeRow[i] || 0);
+
+                            if (points === 0) zeroPointCourseIncluded = true;
+
+                            if (sub.name.includes('Sport') || sub.code === 'SP') {
+                                sportCount++;
+                            }
+
+                            const type = getCourseType(sub.code, i);
+                            const isLK = type === 'LK';
+                            const weight = isLK ? 2 : 1;
+                            
+                            // Defizit Check
+                            if (points < 5) {
+                                defs++;
+                                if (isLK) lkDefs++;
+                            }
+                            
+                            P += points * weight;
+                            S += weight; // LKs zählen doppelt bei S
+                            countCourses++;
+                        }
+                    }
+                });
+                
+                // Formel E I = (P / S) * 40
+                const EI = S > 0 ? Math.round((P / S) * 40) : 0;
+                
+                const criteria = [];
+                
+                // 1. Pflichtkurse
+                const activeSubs = subjects.filter(s => selections[s.code]);
+                const countIncluded = (code) => {
+                     const r = inclusions[code] || [false, false, false, false];
+                     return r.filter(x => x).length;
+                };
+                
+                // 1.1 Abiturfächer
+                const abis = [abiSubjects[1], abiSubjects[2], abiSubjects[3], abiSubjects[4]].filter(Boolean);
+                const abiCheck = abis.every(code => countIncluded(code) === 4);
+                criteria.push({ label: "Alle 4 Abiturfächer (je 4 Kurse)", fulfilled: abiCheck });
+
+                // 1.2 Deutsch
+                criteria.push({ label: "Deutsch (4 Kurse)", fulfilled: countIncluded('D') === 4 });
+                
+                // 1.3 Mathe
+                criteria.push({ label: "Mathematik (4 Kurse)", fulfilled: countIncluded('M') === 4 });
+                
+                // 1.4 FS durchgehend
+                const fsCols = activeSubs.filter(s => s.type === 'lang' && countIncluded(s.code) === 4);
+                criteria.push({ label: "Eine durchgehende Fremdsprache (4 Kurse)", fulfilled: fsCols.length >= 1 });
+                
+                // 1.5 NW durchgehend (Bi, Ph, Ch, IF)
+                const nwCols = activeSubs.filter(s => (['BI','PH','CH','IF'].includes(s.code)) && countIncluded(s.code) === 4);
+                criteria.push({ label: "Eine durchgehende Naturwissenschaft (4 Kurse)", fulfilled: nwCols.length >= 1 });
+
+                // 1.6 GW durchgehend
+                const gwCols = activeSubs.filter(s => s.field === 'II' && s.type !== 'religion' && countIncluded(s.code) === 4);
+                criteria.push({ label: "Eine durchgehende Gesellschaftswissenschaft (4 Kurse)", fulfilled: gwCols.length >= 1 });
+                
+                // 1.7 KU/MU/LIT
+                const artCount = activeSubs.filter(s => ['KU','MU','LIT','VP'].includes(s.code))
+                                           .map(s => countIncluded(s.code))
+                                           .reduce((a,b) => a+b, 0);
+                criteria.push({ label: "Kunst/Musik/Literatur (mind. 2 Kurse)", fulfilled: artCount >= 2 });
+                
+                // 1.8 GE / SW
+                const checkGeSw = (code) => {
+                    if (!subjects.find(s=>s.code===code)) return true; // Fach gar nicht im Angebot?
+                    const inc = inclusions[code] || [false,false,false,false];
+                    // Entweder 2 Kurse in Q1 (Index 0,1 bei inclusions entspricht Q1.1, Q1.2)
+                    if (inc[0] && inc[1]) return true;
+                    // Oder ZK in Q2 (Index 2,3 bei inclusions). ZK ist aber im Selection-Array.
+                    // Wir prüfen hier nur "eingebracht". Wenn GE ZK gewählt ist, ist es Pflicht.
+                    if (inc[2] && inc[3]) return true; 
+                    return false;
+                };
+                criteria.push({ label: "Geschichte (mind. 2 Kurse, Q1 oder ZK)", fulfilled: checkGeSw('GE') });
+                criteria.push({ label: "Sozialwissenschaften (mind. 2 Kurse, Q1 oder ZK)", fulfilled: checkGeSw('SW') });
+
+                // 1.9 Religion
+                const relCount = activeSubs.filter(s => ['KR','ER','PL'].includes(s.code))
+                                            .map(s => countIncluded(s.code))
+                                            .reduce((a,b) => a+b, 0);
+                criteria.push({ label: "Religion/Philosophie (mind. 2 Kurse)", fulfilled: relCount >= 2 });
+
+                // 1.10 Schwerpunkt Q2
+                // Mind. 2. FS oder 2. NW/IF muss in Q2 belegt sein (und eingebracht werden? Meist ja).
+                // Focus Check logic:
+                // Count FS/NW that have 2 courses in Q2 (indices 2,3 in inclusions)
+                const fsQ2 = activeSubs.filter(s => s.type === 'lang' && (inclusions[s.code]||[])[2] && (inclusions[s.code]||[])[3]).length;
+                const nwQ2 = activeSubs.filter(s => ['BI','PH','CH','IF'].includes(s.code) && (inclusions[s.code]||[])[2] && (inclusions[s.code]||[])[3]).length;
+                criteria.push({ label: "Schwerpunktfach (2 Kurse aus Q2)", fulfilled: (fsQ2 >= 2 || nwQ2 >= 2) });
+                
+                
+                // 2. Numerical
+                criteria.push({ label: "35 - 40 anrechenbare Kurse", fulfilled: countCourses >= 35 && countCourses <= 40, value: countCourses });
+                criteria.push({ label: "Mindestens 200 Punkte", fulfilled: EI >= 200, value: EI });
+                criteria.push({ label: "Maximal 3 LK-Defizite", fulfilled: lkDefs <= 3, value: lkDefs });
+                const maxDefs = countCourses >= 38 ? 8 : 7;
+                criteria.push({ label: "Maximal " + maxDefs + " Defizite insgesamt", fulfilled: defs <= maxDefs, value: defs });
+                criteria.push({ label: "Kein Kurs mit 0 Punkten", fulfilled: !zeroPointCourseIncluded });
+                // criteria.push({ label: "Maximal 3 Sportkurse", fulfilled: sportCount <= 3 }); // Removed per user request
+
+                const qualified = criteria.every(c => c.fulfilled);
+
+                setResults({
+                    block1Sum: P,
+                    block1Count: countCourses,
+                    avg: S > 0 ? (P/S).toFixed(2) : 0,
+                    score: EI,
+                    deficits: defs,
+                    lkDeficits: lkDefs,
+                    qualified: qualified,
+                    criteria: criteria
+                });
+                
+            }, [grades, inclusions, selections]);
+
+            const handleGradeChange = (subCode, idx, val) => {
+                const safeVal = Math.min(15, Math.max(0, parseInt(val) || 0));
+                setGrades(prev => {
+                    const row = prev[subCode] ? [...prev[subCode]] : [null,null,null,null];
+                    row[idx] = val === '' ? null : safeVal;
+                    return { ...prev, [subCode]: row };
+                });
+            };
+
+            const toggleInclusion = (subCode, idx) => {
+                if (getMandatoryStatus(subCode, idx)) return; // Locked
+                setInclusions(prev => {
+                    const row = prev[subCode] ? [...prev[subCode]] : [false,false,false,false];
+                    row[idx] = !row[idx];
+                    return { ...prev, [subCode]: row };
+                });
+            };
+
+            const fillRandom = () => {
+                 const newGrades = {};
+                 subjects.forEach(sub => {
+                     newGrades[sub.code] = [
+                         Math.floor(Math.random() * 6) + 7,
+                         Math.floor(Math.random() * 6) + 7,
+                         Math.floor(Math.random() * 6) + 7,
+                         Math.floor(Math.random() * 6) + 7
+                     ];
+                 });
+                 setGrades(newGrades);
+            };
+
+            return (
+                <div className="flex flex-col h-full bg-white">
+                    <div className="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-start">
+                        <div>
+                            <h3 className="font-bold text-lg text-blue-900 flex items-center gap-2">
+                                <Icons.Calculator size={20}/> Abitur-Zulassungsrechner (Block I)
+                            </h3>
+                            <p className="text-xs text-blue-700 mt-1">
+                                Tragen Sie Ihre erwarteten Punktzahlen (0-15) ein. Pflichtkurse sind automatisch markiert. 
+                                Wählen Sie weitere Kurse ("Einkringeln"), um auf 35-40 Kurse zu kommen und Ihr Ergebnis zu optimieren.
+                            </p>
+                        </div>
+                        <div className="text-right">
+                           <div className={"text-2xl font-bold " + (results.qualified ? "text-green-600" : "text-red-600")}>
+                                {results.score} <span className="text-sm font-normal text-gray-500">/ 600 Punkte</span>
+                           </div>
+                           <div className="text-xs text-gray-500">
+                               Kurse: <b>{results.block1Count}</b> (Min 35) | Defizite: <b>{results.deficits}</b> (LK: {results.lkDeficits})
+                           </div>
+                           {!results.qualified && <div className="text-[10px] text-red-500 mt-1 max-w-xs font-bold">Zulassung nicht erreicht (siehe Liste)</div>}
+                        </div>
+                    </div>
+                    
+                    <div className="flex-1 overflow-auto p-4 flex gap-4">
+                        <div className="flex-1">
+                            {/* Main Table Container */}
+                         <div className="mb-2 flex justify-end">
+                            <button onClick={fillRandom} className="text-[10px] text-gray-400 hover:text-blue-500 underline">
+                                Test-Noten auffüllen
+                            </button>
+                        </div>
+                        <table className="w-full text-sm border-collapse">
+                            <thead className="sticky top-0 bg-white z-10 shadow-sm">
+                                <tr>
+                                    <th className="text-left p-2 border-b w-48">Fach</th>
+                                    {Q_PHASES.map(p => <th key={p} className="p-2 border-b text-center w-24">{p}</th>)}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {subjects.filter(s => selections[s.code].slice(2,6).some(v => v)).map(sub => {
+                                    const incRow = inclusions[sub.code] || [false,false,false,false];
+                                    const gradeRow = grades[sub.code] || ['','','',''];
+                                    return (
+                                        <tr key={sub.code} className="border-b border-gray-100 hover:bg-gray-50">
+                                            <td className="p-2 font-medium flex items-center gap-2">
+                                                <span>{sub.name}</span>
+                                                {Object.values(abiSubjects).includes(sub.code) && <span className="text-[9px] bg-yellow-100 text-yellow-800 px-1 rounded">Abi</span>}
+                                            </td>
+                                            {[0,1,2,3].map(i => {
+                                                const type = getCourseType(sub.code, i);
+                                                if (!type) return <td key={i} className="bg-gray-50 border-r border-gray-100"></td>;
+                                                
+                                                const isMandatory = getMandatoryStatus(sub.code, i);
+                                                const isIncluded = incRow[i];
+                                                const grade = gradeRow[i];
+                                                
+                                                return (
+                                                    <td key={i} className={"border-r border-gray-100 p-1 relative " + (isIncluded ? "bg-blue-50/50" : "")}>
+                                                        <div className="flex flex-col items-center h-full justify-center">
+                                                            <div className="flex items-center gap-1 mb-1">
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    checked={isIncluded} 
+                                                                    onChange={() => toggleInclusion(sub.code, i)}
+                                                                    disabled={isMandatory}
+                                                                    className={"inclusion-checkbox " + (isMandatory ? "opacity-50 cursor-not-allowed" : "")}
+                                                                    title={isMandatory ? "Pflichtkurs" : "Anrechnen?"}
+                                                                />
+                                                                <span className="text-[9px] text-gray-400 font-mono">{type}</span>
+                                                            </div>
+                                                            <input 
+                                                                type="number" 
+                                                                min="0" max="15" 
+                                                                className={"grade-input border rounded px-1 w-12 h-6 text-center " + (grade !== '' && grade < 5 ? "text-red-600 font-bold" : "text-gray-800")}
+                                                                placeholder="Pts"
+                                                                value={grade}
+                                                                onChange={(e) => handleGradeChange(sub.code, i, e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                        </div>
+                        
+                        {/* Criteria Sidebar */}
+                        <div className="w-80 shrink-0 bg-gray-50 border-l border-gray-200 p-0 overflow-hidden flex flex-col">
+                             <div className="p-3 border-b border-gray-200 bg-gray-100 font-bold text-gray-700 text-xs flex items-center justify-between">
+                                <span>Zulassungsbedingungen</span>
+                                <span className={"px-1.5 py-0.5 rounded text-[10px] " + (results.qualified ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800")}>
+                                    {results.qualified ? "Erfüllt" : "Nicht erfüllt"}
+                                </span>
+                             </div>
+                             <div className="overflow-y-auto p-2 space-y-1 flex-1">
+                                {results.criteria && results.criteria.map((c, i) => (
+                                    <div key={i} className={"flex items-start gap-2 p-2 rounded border " + (c.fulfilled ? "bg-white border-green-100" : "bg-red-50 border-red-100")}>
+                                        <div className={"mt-0.5 shrink-0 " + (c.fulfilled ? "text-green-500" : "text-red-500")}>
+                                            {c.fulfilled ? <Icons.CheckCircle size={14}/> : <Icons.AlertTriangle size={14}/>}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className={"text-[11px] leading-tight font-medium " + (c.fulfilled ? "text-gray-700" : "text-red-800")}>{c.label}</div>
+                                            {c.value !== undefined && <div className="text-[10px] text-gray-500 font-mono mt-0.5">Aktuell: {c.value}</div>}
+                                        </div>
+                                    </div>
+                                ))}
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const StudentApp = () => {
+            const [view, setView] = useState('planning'); // 'planning' | 'grades'
+            const [subjects] = useState(INITIAL_SUBJECTS); 
+            const [selections, setSelections] = useState(() => {
+                const init = {};
+                subjects.forEach(s => {
+                    if (['D', 'M'].includes(s.code)) init[s.code] = Array(6).fill('S');
+                    else if (s.code === 'SP') init[s.code] = Array(6).fill('M');
+                    else init[s.code] = Array(6).fill('');
+                });
+                return init;
+            });
+            const [abiSubjects, setAbiSubjects] = useState({ 1: '', 2: '', 3: '', 4: '' });
+            const [warnings, setWarnings] = useState([]);
+            const [stats, setStats] = useState({ totalHours: [], courseCount: [] });
+            
+            // New State for Grades
+            const [grades, setGrades] = useState({});
+            const [inclusions, setInclusions] = useState({}); // { SubCode: [bool, bool, bool, bool] } (Only Q Phase)
+            
+            const [studentName, setStudentName] = useState('');
+            const fileInputRef = useRef(null);
+
+            const handleSave = () => {
+                if (!studentName.trim()) { alert('Bitte geben Sie zuerst Ihren Namen ein.'); return; }
+                const data = { selections, abiSubjects, studentName, grades, inclusions }; // Added grades
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const safeName = studentName.replace(/[^a-zA-Z0-9äöüÄÖÜß]/g, '_');
+                a.download = "Kurswahl_" + safeName + ".txt";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            const handleLoadTrigger = () => fileInputRef.current.click();
+
+            const handleFileChange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (data.selections && data.abiSubjects) {
+                            setSelections(data.selections);
+                            setAbiSubjects(data.abiSubjects);
+                            if (data.studentName) setStudentName(data.studentName);
+                            if (data.grades) setGrades(data.grades);
+                            if (data.inclusions) setInclusions(data.inclusions);
+                            alert("Wahl erfolgreich geladen.");
+                        } else {
+                            alert("Ungültiges Dateiformat.");
+                        }
+                    } catch (err) {
+                        alert("Fehler beim Laden der Datei: " + err.message);
+                    }
+                    e.target.value = null;
+                };
+                reader.readAsText(file);
+            };
+
+            const handlePrint = () => window.print();
+
+            const handleSelectionChange = (subCode, phaseIndex, value) => {
+                setSelections(prev => {
+                    const newRow = [...prev[subCode]];
+                    if (value !== '' && newRow[phaseIndex] === '') {
+                        for (let i = phaseIndex; i < 6; i++) {
+                            if (i >= CONFIG.startPhase[subCode] && i <= CONFIG.endPhase[subCode]) { 
+                                if (newRow[i] === '') newRow[i] = value;
+                            }
+                        }
+                    } else { 
+                        if (phaseIndex === 2) {
+                            newRow[2] = value;
+                            [3,4,5].forEach(i => {
+                                if (i <= CONFIG.endPhase[subCode]) newRow[i] = value;
+                            });
+                        } else {
+                            newRow[phaseIndex] = value; 
+                        }
+                    }
+                    if (value === 'LK' && phaseIndex < 2) return prev; 
+                    return { ...prev, [subCode]: newRow };
+                });
+            };
+
+            const handleAbiChange = (pos, subCode) => {
+                const revertSub = (code) => {
+                    setSelections(prevSel => {
+                        const newRow = Array(6).fill('');
+                        if (['D', 'M'].includes(code)) newRow.fill('S');
+                        else if (code === 'SP') newRow.fill('M');
+                        return { ...prevSel, [code]: newRow };
+                    });
+                };
+                if (abiSubjects[pos] === subCode) {
+                    setAbiSubjects(prev => ({ ...prev, [pos]: '' }));
+                    revertSub(subCode);
+                    return;
+                }
+                if (abiSubjects[pos]) revertSub(abiSubjects[pos]);
+                setAbiSubjects(prev => {
+                    const nextAbi = { ...prev };
+                    Object.keys(nextAbi).forEach(k => { if (nextAbi[k] === subCode) nextAbi[k] = ''; });
+                    nextAbi[pos] = subCode;
+                    return nextAbi;
+                });
+                if (subCode) {
+                    setSelections(prevSel => {
+                        const newRow = [...prevSel[subCode]];
+                        const setInRange = (idx, val) => {
+                            if (idx >= CONFIG.startPhase[subCode] && idx <= CONFIG.endPhase[subCode]) newRow[idx] = val;
+                        };
+                        if (pos === 1 || pos === 2) { 
+                            [2, 3, 4, 5].forEach(i => setInRange(i, 'LK'));
+                            [0, 1].forEach(i => setInRange(i, 'S'));
+                        } else if (pos === 3) { 
+                            [2, 3, 4, 5].forEach(i => setInRange(i, 'S'));
+                            [0, 1].forEach(i => setInRange(i, 'S'));
+                        } else if (pos === 4) { 
+                            [2, 3, 4].forEach(i => setInRange(i, 'S'));
+                            setInRange(5, 'M');
+                            [0, 1].forEach(i => setInRange(i, 'S'));
+                        }
+                        return { ...prevSel, [subCode]: newRow };
+                    });
+                }
+            };
+
+            useEffect(() => {
+                const SUBJECTS_LIST = subjects;`;
+
+            const part2 = VALIDATION_LOGIC; // Inject logic safely
+
+            const part3 = `}, [selections, abiSubjects]);
+
+            return (
+                <div className="flex flex-col h-screen w-full bg-gray-50">
+                    <header className="bg-blue-800 text-white p-2 px-4 shadow-sm shrink-0 flex justify-between items-center print:bg-white print:text-black">
+                        <div className="flex flex-col">
+                            <div className="flex items-baseline">
+                                <h1 className="text-lg font-bold mr-3">LuPO NRW Web</h1>
+                                <span className="text-xs text-blue-200 print:text-gray-600">Schülerversion + Abirechner</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-2 items-center print-hide">
+                            <div className="flex bg-blue-900 rounded p-0.5 mr-4">
+                                <button 
+                                    onClick={() => setView('planning')}
+                                    className={"px-3 py-1 text-xs rounded transition-colors " + (view === 'planning' ? "bg-blue-600 text-white shadow" : "text-blue-200 hover:text-white")}
+                                >Laufbahn</button>
+                                <button 
+                                    onClick={() => setView('grades')}
+                                    className={"px-3 py-1 text-xs rounded transition-colors flex items-center gap-1 " + (view === 'grades' ? "bg-blue-600 text-white shadow" : "text-blue-200 hover:text-white")}
+                                >
+                                   Noten & Zulassung
+                                </button>
+                            </div>
+                            <input 
+                                type="text" 
+                                placeholder="Ihr Name" 
+                                value={studentName} 
+                                onChange={(e) => setStudentName(e.target.value)}
+                                className="px-2 py-1 rounded text-black text-xs w-48 border border-blue-400 focus:outline-none focus:border-blue-200"
+                            />
+                             <input type="file" ref={fileInputRef} style={{display: 'none'}} onChange={handleFileChange} accept=".txt,.json" />
+                            <button onClick={handleSave} className="bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs border border-blue-600">Speichern</button>
+                             <button onClick={handleLoadTrigger} className="bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs border border-blue-600">Laden</button>
+                             <button onClick={handlePrint} className="bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs border border-blue-600">Drucken</button>
+                        </div>
+                    </header>
+                    
+                    <div className="flex flex-1 overflow-hidden">
+                        {view === 'planning' ? (
+                            <>
+                            <div className="flex-1 flex flex-col min-w-0 border-r border-gray-300 bg-white main-content">
+                                <div className="overflow-auto flex-1">
+                                    <table className="w-full text-xs border-collapse">
+                                        <thead className="bg-gray-100 text-gray-700 sticky top-0 z-20 shadow-sm">
+                                            <tr>
+                                                <th className="p-2 border-b border-r border-gray-300 text-left w-48 bg-gray-100">Fach</th>
+                                                {PHASES.map(p => <th key={p} className="p-2 border-b border-r border-gray-300 text-center w-16">{p}</th>)}
+                                                <th className="p-2 border-b text-center w-24 bg-yellow-50">Abitur</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {['I', 'II', 'III', 'Sport', 'Sonstiges'].map(field => {
+                                                const visibleSubjects = subjects.filter(s => s.field === field && CONFIG.activeSubjects[s.code]);
+                                                if (visibleSubjects.length === 0) return null;
+                                                return (
+                                                <React.Fragment key={field}>
+                                                    <tr className={FIELD_COLORS[field] + " font-bold text-xs uppercase tracking-wider sticky top-8 z-10"}>
+                                                        <td colSpan={8} className="p-1 pl-2 border-b border-gray-300">{FIELDS[field]}</td>
+                                                    </tr>
+                                                    {visibleSubjects.map(sub => (
+                                                        <tr key={sub.code} className="hover:bg-blue-50 transition-colors border-b border-gray-200">
+                                                            <td className="p-1 border-r border-gray-200 font-medium pl-2 flex justify-between items-center h-8">
+                                                                <span className="truncate mr-2" title={sub.name}>{sub.name}</span>
+                                                                <span className="text-gray-400 font-mono text-[10px]">{sub.code}</span>
+                                                            </td>
+                                                            {PHASES.map((phase, idx) => {
+                                                                    const val = selections[sub.code][idx];
+                                                                    const isBeforeStart = idx < CONFIG.startPhase[sub.code] || idx > CONFIG.endPhase[sub.code];
+                                                                    
+                                                                    // Check for forbidden pairs conflicts in Student View
+                                                                    let isForbidden = false;
+                                                                    if (val === '') { 
+                                                                        isForbidden = CONFIG.forbiddenPairs.some(p => {
+                                                                            if (p.a !== sub.code && p.b !== sub.code) return false;
+                                                                            const otherSubject = p.a === sub.code ? p.b : p.a;
+                                                                            return selections[otherSubject] && selections[otherSubject][idx] !== '';
+                                                                        });
+                                                                    }
+
+                                                                    let cellClass = "p-0 border-r border-gray-200 text-center h-8";
+                                                                    if (isBeforeStart || isForbidden) cellClass += " disabled-cell";
+                                                                    
+                                                                    let bgClass = "bg-transparent";
+                                                                    if (val === 'LK') bgClass = "bg-red-100 text-red-900 font-bold";
+                                                                    else if (val === 'S') bgClass = "bg-blue-50 text-blue-900";
+                                                                    else if (val === 'ZK') bgClass = "bg-yellow-100";
+            
+                                                                    const allowedOpts = COURSE_OPTS.filter(opt => {
+                                                                        if (opt.val === 'LK') return idx >= 2; 
+                                                                        if (opt.val === 'ZK') return idx >= 4 && CONFIG.zkAllowed[sub.code];
+                                                                        return true;
+                                                                    });
+            
+                                                                    return (
+                                                                        <td key={idx} className={cellClass}>
+                                                                            <select 
+                                                                                value={val} 
+                                                                                onChange={(e) => handleSelectionChange(sub.code, idx, e.target.value)} 
+                                                                                disabled={isBeforeStart || isForbidden} 
+                                                                                className={"w-full h-full outline-none cursor-pointer cell-select " + bgClass}
+                                                                            >
+                                                                                {allowedOpts.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
+                                                                            </select>
+                                                                        </td>
+                                                                    );
+                                                                })}
+                                                            <td className="p-0 text-center bg-yellow-50 h-8">
+                                                                <div className="flex justify-center items-center h-full gap-0.5">
+                                                                    {[1,2,3,4].map(num => (
+                                                                        <button key={num} onClick={() => handleAbiChange(num, abiSubjects[num] === sub.code ? '' : sub.code)} 
+                                                                            className={"w-4 h-4 rounded-full text-[9px] flex items-center justify-center border " + (abiSubjects[num] === sub.code ? "bg-yellow-600 text-white border-yellow-700 font-bold" : "bg-white text-gray-300 border-gray-200 hover:border-gray-400")}
+                                                                        >{num}</button>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </React.Fragment>
+                                            )})}
+                                        </tbody>
+                                        <tfoot className="bg-gray-50 text-xs font-mono border-t-2 border-gray-300 sticky bottom-0 z-20 shadow-[0_-1px_3px_rgba(0,0,0,0.1)]">
+                                            <tr>
+                                                <td className="p-2 border-r border-gray-300 font-bold bg-gray-50">Wochenstunden (Ø)</td>
+                                                {stats.totalHours.map((h, i) => <td key={i} className={"p-2 border-r border-gray-300 text-center font-bold " + (h < 34 ? "text-red-600" : "text-green-700")}>{h}</td>)}
+                                                <td className="bg-gray-50"></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div className="w-80 bg-gray-50 flex flex-col border-l border-gray-200 shrink-0 overflow-y-auto p-4 gap-4 sidebar-panel">
+                                <div className="bg-white rounded shadow-sm border border-gray-200 p-3">
+                                    <h3 className="font-bold text-sm text-gray-700 mb-2 uppercase tracking-wide border-b pb-1">Abiturfächer</h3>
+                                    <div className="space-y-2">
+                                        {[1,2,3,4].map(num => {
+                                            const code = abiSubjects[num];
+                                            const sub = subjects.find(s => s.code === code);
+                                            return (
+                                                <div key={num} className="flex justify-between items-center text-xs">
+                                                    <span className="text-gray-500 w-6 font-mono">{num}.</span>
+                                                    <span className={"font-medium truncate flex-1 " + (code ? "text-gray-900" : "text-gray-400 italic")}>{sub ? sub.name : '---'}</span>
+                                                    <span className="text-[10px] text-gray-400 border px-1 rounded bg-gray-50">{num <= 2 ? 'LK' : (num === 3 ? 'GK-S' : 'GK-M')}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                <div className="flex-1 flex flex-col min-h-0 bg-gray-50/50 rounded shadow-sm border p-3">
+                                    {(() => {
+                                        const errorCount = warnings.filter(w => !w.startsWith("Warnung:")).length;
+                                        const warningCount = warnings.filter(w => w.startsWith("Warnung:")).length;
+                                        const isInvalid = errorCount > 0;
+                                        const isWarning = warningCount > 0;
+                                        const statusColor = isInvalid ? "red" : (isWarning ? "orange" : "green");
+                                        const StatusIcon = isInvalid ? Icons.Ban : (isWarning ? Icons.AlertTriangle : Icons.CheckCircle);
+
+                                        return (
+                                        <React.Fragment>
+                                            <h3 className={"font-bold text-sm mb-2 uppercase tracking-wide border-b pb-1 flex justify-between items-center " + (isInvalid ? "text-red-800 border-red-200" : (isWarning ? "text-orange-800 border-orange-200" : "text-green-800 border-green-200"))}>
+                                                <div className="flex items-center gap-2">
+                                                    <StatusIcon size={14} />
+                                                    <span>{isInvalid ? "Ungültig" : (isWarning ? "Hinweise" : "Gültig")}</span>
+                                                </div>
+                                                 <div className="flex gap-1">
+                                                    {errorCount > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-200 text-red-900">{errorCount} Fehler</span>}
+                                                    {warningCount > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-orange-200 text-orange-900">{warningCount} Warnung(en)</span>}
+                                                    {errorCount === 0 && warningCount === 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-green-200 text-green-900">OK</span>}
+                                                </div>
+                                            </h3>
+                                            {warnings.length === 0 ? (
+                                                <div className="text-green-700 text-xs flex items-start">
+                                                    <Icons.CheckCircle className="w-4 h-4 mr-1 shrink-0" />
+                                                    <div>Laufbahn formal gültig.</div>
+                                                </div>
+                                            ) : (
+                                                <ul className="space-y-1 overflow-y-auto flex-1 pr-1">
+                                                    {warnings.map((w, i) => {
+                                                        const isWarn = w.startsWith("Warnung:");
+                                                        return (
+                                                        <li key={i} className={"text-[11px] flex items-start bg-white/50 p-1 rounded " + (isWarn ? "text-orange-900" : "text-red-900")}>
+                                                            <span className={"mr-1.5 mt-0.5 " + (isWarn ? "text-orange-500" : "text-red-500")}>•</span> {w.replace(/Fehler:|Warnung:|Konflikt:|Abitur:|Pflicht:/g, '').trim()}
+                                                        </li>
+                                                        );
+                                                    })}
+                                                </ul>
+                                            )}
+                                        </React.Fragment>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+                            </>
+                        ) : (
+                            <AdmissionCalculator 
+                                selections={selections}
+                                abiSubjects={abiSubjects}
+                                subjects={subjects}
+                                grades={grades}
+                                setGrades={setGrades}
+                                inclusions={inclusions}
+                                setInclusions={setInclusions}
+                            />
+                        )}
+                    </div>
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<StudentApp />);
+    <\/script>
+</body>
+</html>`;
+            return part1 + part2 + part3;
+        };
+
+        const LuPOManager = () => {
+            const [mode, setMode] = useState('teacher');
+            const [config, setConfig] = useState(DEFAULT_CONFIG);
+            const [subjects, setSubjects] = useState(INITIAL_SUBJECTS);
+            const [newSub, setNewSub] = useState({ code: '', name: '', field: 'Sonstiges' });
+            const [selections, setSelections] = useState(() => {
+                const init = {};
+                subjects.forEach(s => {
+                    if (['D', 'M'].includes(s.code)) init[s.code] = Array(6).fill('S');
+                    else if (s.code === 'SP') init[s.code] = Array(6).fill('M');
+                    else init[s.code] = Array(6).fill('');
+                });
+                return init;
+            });
+            const [abiSubjects, setAbiSubjects] = useState({ 1: '', 2: '', 3: '', 4: '' });
+            const [warnings, setWarnings] = useState([]);
+            const [stats, setStats] = useState({ totalHours: [], courseCount: [] });
+
+            const toggleSubjectActive = (code) => setConfig(p => ({ ...p, activeSubjects: { ...p.activeSubjects, [code]: !p.activeSubjects[code] } }));
+            const toggleZK = (code) => setConfig(p => ({ ...p, zkAllowed: { ...p.zkAllowed, [code]: !p.zkAllowed[code] } }));
+            const setStartPhase = (code, phaseIdx) => setConfig(p => ({ ...p, startPhase: { ...p.startPhase, [code]: parseInt(phaseIdx) } }));
+            const setEndPhase = (code, phaseIdx) => setConfig(p => ({ ...p, endPhase: { ...p.endPhase, [code]: parseInt(phaseIdx) } }));
+            const addForbiddenPair = (a, b) => { if (a === b || !a || !b) return; setConfig(p => ({ ...p, forbiddenPairs: [...p.forbiddenPairs, { a, b }] })); };
+            const removeForbiddenPair = (idx) => setConfig(p => ({ ...p, forbiddenPairs: p.forbiddenPairs.filter((_, i) => i !== idx) }));
+
+            const handleAddSubject = () => {
+                if (!newSub.code || !newSub.name) return;
+                if (subjects.some(s => s.code === newSub.code)) { alert('Kürzel existiert bereits'); return; }
+
+                const newSubject = {
+                    code: newSub.code,
+                    name: newSub.name,
+                    field: newSub.field,
+                    type: 'misc',
+                    hours: { ...HOURS_DEF }
+                };
+
+                setSubjects(prev => [...prev, newSubject]);
+                setConfig(prev => ({
+                    ...prev,
+                    activeSubjects: { ...prev.activeSubjects, [newSubject.code]: true },
+                    zkAllowed: { ...prev.zkAllowed, [newSubject.code]: false },
+                    startPhase: { ...prev.startPhase, [newSubject.code]: 0 },
+                    endPhase: { ...prev.endPhase, [newSubject.code]: 5 }
+                }));
+                setSelections(prev => ({ ...prev, [newSubject.code]: Array(6).fill('') }));
+                setNewSub({ code: '', name: '', field: 'Sonstiges' });
+            };
+
+            const handleUpdateHours = (code, type, val) => {
+                const num = parseInt(val) || 0;
+                setSubjects(prev => prev.map(s => {
+                    if (s.code !== code) return s;
+                    const h = { ...s.hours };
+                    h[type] = num;
+                    return { ...s, hours: h };
+                }));
+            };
+
+            const downloadStudentFile = () => {
+                const htmlContent = getStudentHTMLTemplate(config, subjects);
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'lupo_schueler_wahl.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            const handleSelectionChange = (subCode, phaseIndex, value) => {
+                setSelections(prev => {
+                    const newRow = [...prev[subCode]];
+                    if (value !== '' && newRow[phaseIndex] === '') {
+                        for (let i = phaseIndex; i < 6; i++) {
+                            if (i >= config.startPhase[subCode] && i <= config.endPhase[subCode]) {
+                                if (newRow[i] === '') newRow[i] = value;
+                            }
+                        }
+                    } else {
+                        if (phaseIndex === 2) {
+                            newRow[2] = value;
+                            [3, 4, 5].forEach(i => {
+                                if (i <= config.endPhase[subCode]) newRow[i] = value;
+                            });
+                        } else {
+                            newRow[phaseIndex] = value;
+                        }
+                    }
+                    if (value === 'LK' && phaseIndex < 2) return prev;
+                    return { ...prev, [subCode]: newRow };
+                });
+            };
+
+            const handleAbiChange = (pos, subCode) => {
+                const revertSub = (code) => {
+                    setSelections(prevSel => {
+                        const newRow = Array(6).fill('');
+                        if (['D', 'M'].includes(code)) newRow.fill('S');
+                        else if (code === 'SP') newRow.fill('M');
+                        return { ...prevSel, [code]: newRow };
+                    });
+                };
+                if (abiSubjects[pos] === subCode) {
+                    setAbiSubjects(prev => ({ ...prev, [pos]: '' }));
+                    revertSub(subCode);
+                    return;
+                }
+                if (abiSubjects[pos]) revertSub(abiSubjects[pos]);
+                setAbiSubjects(prev => {
+                    const nextAbi = { ...prev };
+                    Object.keys(nextAbi).forEach(k => { if (nextAbi[k] === subCode) nextAbi[k] = ''; });
+                    nextAbi[pos] = subCode;
+                    return nextAbi;
+                });
+                if (subCode) {
+                    setSelections(prevSel => {
+                        const newRow = [...prevSel[subCode]];
+                        const setInRange = (idx, val) => {
+                            if (idx >= config.startPhase[subCode] && idx <= config.endPhase[subCode]) newRow[idx] = val;
+                        };
+                        if (pos === 1 || pos === 2) {
+                            [2, 3, 4, 5].forEach(i => setInRange(i, 'LK'));
+                            [0, 1].forEach(i => setInRange(i, 'S'));
+                        } else if (pos === 3) {
+                            [2, 3, 4, 5].forEach(i => setInRange(i, 'S'));
+                            [0, 1].forEach(i => setInRange(i, 'S'));
+                        } else if (pos === 4) {
+                            [2, 3, 4].forEach(i => setInRange(i, 'S'));
+                            setInRange(5, 'M');
+                            [0, 1].forEach(i => setInRange(i, 'S'));
+                        }
+                        return { ...prevSel, [subCode]: newRow };
+                    });
+                }
+            };
+
+            useEffect(() => {
+                const CONFIG = config;
+                const SUBJECTS_LIST = subjects;
+                const runValidation = () => { eval(VALIDATION_LOGIC); };
+                runValidation();
+            }, [selections, config, abiSubjects, subjects]);
+
+            return (
+                <div className="flex flex-col h-screen overflow-hidden bg-gray-50 font-sans text-sm">
+                    <div className="bg-slate-800 text-white p-4 shadow-md shrink-0 border-b-4 border-orange-500 z-30">
+                        <div className="flex justify-between items-center max-w-[1920px] mx-auto w-full">
+                            <div className="flex items-center gap-4">
+                                <div>
+                                    <h2 className="text-xl font-bold flex items-center gap-2"><Icons.Settings size={24} /> LupoWeb Lehrer-Manager </h2>
+                                    <div className="text-[10px] text-slate-400 font-normal ml-8">Simulation des Lupo NRW Programms. Keine Gewähr für Fehler.</div>
+                                </div>
+                                <div className="h-6 w-px bg-slate-600"></div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setMode(mode === 'student' ? 'teacher' : 'student')} className={"px-3 py-1.5 rounded flex items-center gap-2 text-sm font-medium transition-colors " + (mode === 'teacher' ? "bg-blue-600 text-white shadow-inner" : "bg-slate-700 hover:bg-slate-600 text-slate-200")}>
+                                        <Icons.Users size={16} /> {mode === 'teacher' ? 'Vorschau & Einstellungen' : 'Nur Vorschau'}
+                                    </button>
+                                    <button onClick={downloadStudentFile} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded flex items-center gap-2 text-sm font-medium shadow-sm transition-colors">
+                                        <Icons.Download size={16} /> Exportieren (.html)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-1 overflow-hidden relative">
+                        {mode === 'teacher' && (
+                            <div className="w-80 bg-slate-800 border-r border-slate-700 flex flex-col overflow-hidden shrink-0 z-20 shadow-xl">
+                                <div className="p-3 bg-slate-900 border-b border-slate-700 font-bold text-slate-200 flex items-center gap-2">
+                                    <Icons.BookOpen size={16} /> Konfiguration
+                                </div>
+                                <div className="overflow-y-auto flex-1 p-2 space-y-6">
+                                    <div>
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Fächerangebot</h3>
+                                        <div className="space-y-0.5">
+                                            <div className="space-y-0.5">
+                                                {subjects.map(sub => (
+                                                    <div key={sub.code} className="bg-slate-700/50 hover:bg-slate-700 p-1.5 rounded text-xs group flex flex-col gap-1">
+                                                        <div className="flex items-center">
+                                                            <input type="checkbox" checked={config.activeSubjects[sub.code]} onChange={() => toggleSubjectActive(sub.code)} className="mr-2" />
+                                                            <span className={"flex-1 truncate font-bold " + (config.activeSubjects[sub.code] ? "text-slate-200" : "text-slate-500")} title={sub.name}>{sub.code} - {sub.name}</span>
+                                                            <div className="flex gap-1 items-center">
+                                                                <span title="ZK erlaubt?" className="text-[10px] text-slate-400">ZK</span>
+                                                                <input type="checkbox" checked={config.zkAllowed[sub.code]} onChange={() => toggleZK(sub.code)} className="mr-2 h-3 w-3" />
+                                                            </div>
+                                                        </div>
+                                                        {config.activeSubjects[sub.code] && (
+                                                            <div className="pl-6 flex flex-wrap gap-2 text-[10px] text-slate-400 items-center">
+                                                                <span>Std:</span>
+                                                                <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
+                                                                    <span className="text-slate-500">EF</span>
+                                                                    <input type="number" className="w-6 bg-transparent text-center text-slate-200 outline-none" value={sub.hours.EF} onChange={(e) => handleUpdateHours(sub.code, 'EF', e.target.value)} />
+                                                                </div>
+                                                                <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
+                                                                    <span className="text-slate-500">Q</span>
+                                                                    <input type="number" className="w-6 bg-transparent text-center text-slate-200 outline-none" value={sub.hours.Q} onChange={(e) => handleUpdateHours(sub.code, 'Q', e.target.value)} />
+                                                                </div>
+                                                                <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
+                                                                    <span className="text-slate-500">LK</span>
+                                                                    <input type="number" className="w-6 bg-transparent text-center text-slate-200 outline-none" value={sub.hours.LK} onChange={(e) => handleUpdateHours(sub.code, 'LK', e.target.value)} />
+                                                                </div>
+                                                                <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
+                                                                    <span className="text-slate-500">Start/End</span>
+                                                                    <select value={config.startPhase[sub.code]} onChange={(e) => setStartPhase(sub.code, e.target.value)} className="bg-transparent text-slate-200 w-8 outline-none">
+                                                                        {PHASES.map((p, i) => <option key={i} value={i}>{p}</option>)}
+                                                                    </select>
+                                                                    <span>-</span>
+                                                                    <select value={config.endPhase[sub.code]} onChange={(e) => setEndPhase(sub.code, e.target.value)} className="bg-transparent text-slate-200 w-8 outline-none">
+                                                                        {PHASES.map((p, i) => <option key={i} value={i}>{p}</option>)}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                <div className="bg-slate-800 border border-slate-600 border-dashed p-2 rounded mt-2">
+                                                    <div className="text-xs font-bold text-slate-400 mb-2">Neues Fach</div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <input type="text" placeholder="Kürzel (z.B. PSY)" value={newSub.code} onChange={e => setNewSub(p => ({ ...p, code: e.target.value }))} className="bg-slate-700 text-white text-xs p-1 rounded border border-slate-600" />
+                                                        <input type="text" placeholder="Name (z.B. Psychologie)" value={newSub.name} onChange={e => setNewSub(p => ({ ...p, name: e.target.value }))} className="bg-slate-700 text-white text-xs p-1 rounded border border-slate-600" />
+                                                        <select value={newSub.field} onChange={e => setNewSub(p => ({ ...p, field: e.target.value }))} className="bg-slate-700 text-white text-xs p-1 rounded border border-slate-600">
+                                                            {Object.keys(FIELDS).map(k => <option key={k} value={k}>{FIELDS[k]}</option>)}
+                                                        </select>
+                                                        <button onClick={handleAddSubject} className="bg-blue-600 hover:bg-blue-500 text-white text-xs py-1 rounded">Fach hinzufügen</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-1 flex items-center gap-2"><Icons.Ban size={12} /> Ausschlüsse</h3>
+                                        <div className="flex gap-1 mb-2">
+                                            <select id="selA" className="bg-slate-900 text-white text-xs p-1 rounded w-full border border-slate-600">{subjects.map(s => <option key={s.code} value={s.code}>{s.code}</option>)}</select>
+                                            <select id="selB" className="bg-slate-900 text-white text-xs p-1 rounded w-full border border-slate-600">{subjects.map(s => <option key={s.code} value={s.code}>{s.code}</option>)}</select>
+                                            <button onClick={() => { const a = document.getElementById('selA').value; const b = document.getElementById('selB').value; addForbiddenPair(a, b); }} className="bg-orange-600 text-white px-2 rounded text-xs">+</button>
+                                        </div>
+                                        <div className="space-y-1">
+                                            {config.forbiddenPairs.map((pair, idx) => (
+                                                <div key={idx} className="flex justify-between items-center bg-red-900/30 border border-red-900/50 p-1 rounded text-xs text-red-200">
+                                                    <span>{pair.a} + {pair.b}</span>
+                                                    <button onClick={() => removeForbiddenPair(idx)} className="hover:text-white">×</button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex-1 flex overflow-hidden bg-gray-100">
+                            <div className="flex-1 flex flex-col min-w-0 bg-white shadow-sm border-r border-gray-200 m-2 rounded overflow-hidden">
+                                <div className="bg-gray-100 p-2 border-b border-gray-200 font-bold text-gray-700 text-xs flex justify-between items-center sticky top-0">
+                                    <span>Laufbahnplanung (Lehrer-Ansicht)</span>
+                                </div>
+                                <div className="flex-1 overflow-auto">
+                                    <table className="w-full text-xs border-collapse">
+                                        <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10 shadow-sm">
+                                            <tr>
+                                                <th className="p-2 border-b border-r border-gray-200 text-left w-48 bg-gray-50">Fach</th>
+                                                {PHASES.map(p => <th key={p} className="p-2 border-b border-r border-gray-200 text-center w-16">{p}</th>)}
+                                                <th className="p-2 border-b text-center w-24 bg-yellow-50">Abitur</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {['I', 'II', 'III', 'Sport', 'Sonstiges'].map(field => {
+                                                const visibleSubjects = subjects.filter(s => s.field === field && config.activeSubjects[s.code]);
+                                                if (visibleSubjects.length === 0) return null;
+                                                return (
+                                                    <React.Fragment key={field}>
+                                                        <tr className={FIELD_COLORS[field] + " font-bold text-xs uppercase tracking-wider sticky top-8 z-0"}>
+                                                            <td colSpan={8} className="p-1 pl-2 border-b border-gray-300">{FIELDS[field]}</td>
+                                                        </tr>
+                                                        {visibleSubjects.map(sub => (
+                                                            <tr key={sub.code} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                                                                <td className="p-1 border-r border-gray-200 font-medium pl-2 flex justify-between items-center h-8">
+                                                                    <div className="flex flex-col truncate mr-2">
+                                                                        <span className="text-gray-700 truncate" title={sub.name}>{sub.name}</span>
+                                                                        <span className="text-[9px] text-gray-400">Std: {sub.hours.EF}/{sub.hours.Q} (LK {sub.hours.LK})</span>
+                                                                    </div>
+                                                                    <span className="text-gray-400 font-mono text-[10px]">{sub.code}</span>
+                                                                </td>
+                                                                {PHASES.map((phase, idx) => {
+                                                                    const val = selections[sub.code][idx];
+                                                                    const isBeforeStart = idx < config.startPhase[sub.code] || idx > config.endPhase[sub.code];
+
+                                                                    // Check for forbidden pairs conflicts
+                                                                    let isForbidden = false;
+                                                                    if (val === '') { // Only disable if empty (don't lock existing choices)
+                                                                        isForbidden = config.forbiddenPairs.some(p => {
+                                                                            if (p.a !== sub.code && p.b !== sub.code) return false;
+                                                                            const otherSubject = p.a === sub.code ? p.b : p.a;
+                                                                            return selections[otherSubject] && selections[otherSubject][idx] !== '';
+                                                                        });
+                                                                    }
+
+                                                                    let cellClass = "p-0 border-r border-gray-200 text-center h-8";
+                                                                    if (isBeforeStart || isForbidden) cellClass += " disabled-cell";
+
+                                                                    let bgClass = "bg-transparent text-gray-700";
+                                                                    if (val === 'LK') bgClass = "bg-red-100 text-red-900 font-bold";
+                                                                    else if (val === 'S') bgClass = "bg-blue-50 text-blue-900";
+                                                                    else if (val === 'ZK') bgClass = "bg-yellow-100 text-yellow-900";
+
+                                                                    const allowedOpts = COURSE_OPTS.filter(opt => {
+                                                                        if (opt.val === 'LK') return idx >= 2;
+                                                                        if (opt.val === 'ZK') return idx >= 4 && config.zkAllowed[sub.code];
+                                                                        return true;
+                                                                    });
+
+                                                                    return (
+                                                                        <td key={idx} className={cellClass}>
+                                                                            <select value={val} onChange={(e) => handleSelectionChange(sub.code, idx, e.target.value)} disabled={isBeforeStart || isForbidden} className={"w-full h-full outline-none cursor-pointer cell-select " + bgClass}>
+                                                                                {allowedOpts.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
+                                                                            </select>
+                                                                        </td>
+                                                                    );
+                                                                })}
+                                                                <td className="p-0 text-center bg-yellow-50 h-8">
+                                                                    <div className="flex justify-center items-center h-full gap-0.5">
+                                                                        {[1, 2, 3, 4].map(num => (
+                                                                            <button key={num} onClick={() => handleAbiChange(num, abiSubjects[num] === sub.code ? '' : sub.code)} className={"w-4 h-4 rounded-full text-[9px] flex items-center justify-center border " + (abiSubjects[num] === sub.code ? "bg-yellow-600 text-white border-yellow-700 font-bold" : "bg-white text-gray-300 border-gray-200 hover:border-gray-400")}>{num}</button>
+                                                                        ))}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </React.Fragment>
+                                                )
+                                            })}
+                                        </tbody>
+                                        <tfoot className="bg-gray-50 text-xs font-mono border-t border-gray-300 sticky bottom-0 z-20 shadow-[0_-1px_3px_rgba(0,0,0,0.1)]">
+                                            <tr>
+                                                <td className="p-2 border-r border-gray-300 font-bold text-gray-600">Wochenstunden (Ø)</td>
+                                                {stats.totalHours.map((h, i) => <td key={i} className={"p-2 border-r border-gray-300 text-center font-bold " + (h < 34 ? "text-red-600" : "text-green-700")}>{h}</td>)}
+                                                <td className="bg-gray-50"></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            <div className="w-72 bg-white m-2 ml-0 rounded border border-gray-200 shadow-sm flex flex-col shrink-0 overflow-hidden">
+                                <div className="p-3 border-b border-gray-100">
+                                    <h3 className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Abiturfächer</h3>
+                                    <div className="space-y-1.5">
+                                        {[1, 2, 3, 4].map(num => {
+                                            const code = abiSubjects[num];
+                                            const sub = subjects.find(s => s.code === code);
+                                            return (
+                                                <div key={num} className="flex items-center text-xs bg-gray-50 p-1.5 rounded border border-gray-100">
+                                                    <span className="text-gray-400 w-6 font-mono font-bold text-[10px]">{num}.</span>
+                                                    <span className={"font-semibold truncate flex-1 " + (code ? "text-gray-900" : "text-gray-400 italic")}>{sub ? sub.name : '---'}</span>
+                                                    <span className="text-[9px] text-gray-500 border border-gray-300 px-1 rounded bg-white">{num <= 2 ? 'LK' : (num === 3 ? 'GK-S' : 'GK-M')}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                <div className="flex-1 flex flex-col min-h-0 bg-gray-50/50">
+                                    {(() => {
+                                        const errorCount = warnings.filter(w => !w.startsWith("Warnung:")).length;
+                                        const warningCount = warnings.filter(w => w.startsWith("Warnung:")).length;
+                                        const isInvalid = errorCount > 0;
+                                        const isWarning = warningCount > 0;
+                                        const statusColor = isInvalid ? "red" : (isWarning ? "orange" : "green");
+                                        const StatusIcon = isInvalid ? Icons.Ban : (isWarning ? Icons.AlertTriangle : Icons.CheckCircle);
+
+                                        return (
+                                            <>
+                                                <h3 className={`font-bold text-xs uppercase tracking-wider p-3 border-b flex justify-between items-center bg-${statusColor}-50 border-${statusColor}-100 text-${statusColor}-800`}>
+                                                    <div className="flex items-center gap-2">
+                                                        <StatusIcon size={14} />
+                                                        <span>{isInvalid ? "Ungültig" : (isWarning ? "Hinweise" : "Gültig")}</span>
+                                                    </div>
+                                                    <div className="flex gap-1">
+                                                        {errorCount > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-200 text-red-900">{errorCount} Fehler</span>}
+                                                        {warningCount > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-orange-200 text-orange-900">{warningCount} Warnung(en)</span>}
+                                                        {errorCount === 0 && warningCount === 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-green-200 text-green-900">OK</span>}
+                                                    </div>
+                                                </h3>
+                                                <div className="overflow-y-auto p-2 space-y-1 flex-1">
+                                                    {warnings.length === 0 ? (
+                                                        <div className="text-green-600 text-xs flex items-center p-2">
+                                                            <Icons.CheckCircle className="w-4 h-4 mr-2" />
+                                                            Laufbahn gültig.
+                                                        </div>
+                                                    ) : (
+                                                        warnings.map((w, i) => {
+                                                            const isWarn = w.startsWith("Warnung:");
+                                                            return (
+                                                                <div key={i} className={`text-[11px] p-2 rounded shadow-sm flex items-start gap-2 border bg-white ${isWarn ? "text-orange-900 border-orange-200" : "text-red-900 border-red-200"}`}>
+                                                                    {isWarn ? <Icons.AlertTriangle size={12} className="text-orange-500 mt-0.5 shrink-0" /> : <Icons.Ban size={12} className="text-red-500 mt-0.5 shrink-0" />}
+                                                                    <span className="leading-tight">{w.replace(/Fehler:|Warnung:|Konflikt:|Abitur:|Pflicht:/g, '').trim()}</span>
+                                                                </div>
+                                                            );
+                                                        })
+                                                    )}
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<LuPOManager />);
+    </script>
+</body>
+
+</html>
