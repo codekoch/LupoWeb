@@ -20,14 +20,14 @@ Dieses Projekt entstand ursprünglich als "Proof of Concept" mit Unterstützung 
 ✨ Features
 Das Projekt besteht aus zwei Hauptkomponenten:
 
-1. Lehrer-Manager (lupo_web.html)
+1. Lehrer-Manager (<a href="">lupo_web.html</a>)
 Konfiguration: Aktivieren/Deaktivieren von Fächern, Festlegen von Stundenzahlen, Start-/Endphasen und Zusatzkursen.
 
 Regelwerk: Definition von "Verbotenen Fächerkombinationen" (z.B. Religionslehre vs. Philosophie).
 
 Export: Generiert per Knopfdruck die Schüler-Version als eigenständige HTML-Datei, die genau auf das Schulprofil zugeschnitten ist.
 
-2. Schüler-Wahl & Abirechner (lupo_schueler_wahl.html)
+2. Schüler-Wahl & Abirechner (<a href="">lupo_schueler_wahl.html</a>)
 Laufbahnplanung: Interaktive Wahl von EF.1 bis Q2.2.
 
 Validierung: Prüft live gegen gängige Belegungsverpflichtungen (z.B. "Kunst/Musik in Q1", "Durchgehende Fremdsprache", "Schwerpunkt", "Anzahl LKs").
