@@ -1,4 +1,4 @@
-# 🎓 LuPO Web - NRW Oberstufen-Planung im Browser
+# 🎓 <a href="">LuPO Web </a>- NRW Oberstufen-Planung im Browser
 
 Eine webbasierte, systemunabhängige Alternative zum offiziellen LuPO-Programm für die Laufbahnberatung in der gymnasialen Oberstufe (NRW).
 
