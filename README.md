@@ -1,0 +1,2 @@
+# LupoWeb
+Webversion von Lupo
