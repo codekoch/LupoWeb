@@ -96,7 +96,7 @@ Verfeinerung der Validierungsregeln (Sonderfälle).
 
 Verbesserung der "Print"-Ansicht (CSS).
 
-Erweiterung um Import-Funktionen für offizielle LuPO-Dateien (.lup).
+Erweiterung um Import- und Export-Funktionen für offizielle LuPO-Dateien (.lup).
 
 📄 Lizenz & Haftung
 Der Quellcode ist Open Source. Haftungsausschluss: Die Berechnungen in diesem Tool dienen lediglich der Orientierung. Rechtsverbindlich sind ausschließlich die Beratungen durch die Oberstufenkoordinatoren und die offizielle Berechnung in der Schild-NRW Datenbank. Für Entscheidungen, die auf Basis dieser Software getroffen werden, wird keine Haftung übernommen.
