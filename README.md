@@ -11,7 +11,7 @@
 
 Eine webbasierte, systemunabhängige Alternative zum offiziellen LuPO-Programm für die Laufbahnberatung in der gymnasialen Oberstufe (NRW).
 
-⚠️ Wichtiger Hinweis: Dies ist keine offizielle Software des Landes NRW oder von SVWS. Es handelt sich um ein Community-Projekt. Die Nutzung erfolgt auf eigene Gefahr. Bitte überprüfen Sie alle Planungen stets auf Konformität mit der aktuellen APO-GOSt.
+⚠️ Wichtiger Hinweis: Dies ist keine offizielle Software des Landes NRW oder von SVWS. Es handelt sich um ein Community-Projekt. Die Nutzung erfolgt auf eigene Gefahr. Bitte überprüfe alle Planungen stets auf Konformität mit der aktuellen APO-GOSt.
 
 🌟 Über das Projekt
 Das offizielle LuPO-Programm (Laufbahn- und Planungstool Oberstufe) ist eine Windows-Anwendung. In einer immer diverseren Gerätelandschaft (iPads, MacBooks, Chromebooks) stellt dies Schulen oft vor technische Hürden.
