@@ -4,7 +4,7 @@
         <img src="lupo_web.png" width="45%" alt="lupo_web.html">
       </a>
   &nbsp; &nbsp; 
-  <a href="[DEIN_LINK_ZIEL_2](https://codekoch.github.io/LupoWeb/lupo_schueler_wahl.html)">
+  <a href="https://codekoch.github.io/LupoWeb/lupo_schueler_wahl.html">
         <img src="lupo_schueler_wahl.png" width="45%" alt="lupo_schueler_wahl.html">
       </a>
 </p>
