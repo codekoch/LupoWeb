@@ -1,4 +1,18 @@
 # 🎓 <a href="https://codekoch.github.io/LupoWeb/lupo_web.html">LuPO Web </a>- NRW Oberstufen-Planung im Browser
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://codekoch.github.io/LupoWeb/lupo_web.html">
+        <img src="lupo_web.png" width="200" alt="Bild 1">
+      </a>
+    </td>
+    <td align="center">
+      <a href="[DEIN_LINK_ZIEL_2](https://codekoch.github.io/LupoWeb/lupo_schueler_wahl.html)">
+        <img src="lupo_schueler_wahl.png" width="200" alt="Bild 2">
+      </a>
+    </td>
+  </tr>
+</table>
 
 Eine webbasierte, systemunabhängige Alternative zum offiziellen LuPO-Programm für die Laufbahnberatung in der gymnasialen Oberstufe (NRW).
 
