@@ -87,6 +87,187 @@
             height: 14px;
             cursor: pointer;
         }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0.5cm;
+            }
+
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                font-size: 10px;
+            }
+
+            #root {
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            /* Header adjustments */
+            header {
+                background: white !important;
+                color: black !important;
+                border-bottom: 2px solid black;
+                padding: 0 !important;
+                margin-bottom: 0.5cm;
+                position: relative !important;
+            }
+
+            header h1 {
+                color: black !important;
+                font-size: 14pt !important;
+                margin: 0;
+            }
+
+            header button,
+            header input,
+            header .print-hide {
+                display: none !important;
+            }
+
+            header span {
+                color: #333 !important;
+                font-size: 8pt !important;
+            }
+
+            /* Main Container Layout */
+            .flex-col,
+            .flex-row,
+            .flex {
+                display: flex !important;
+            }
+
+            /* Restore flex for side-by-side */
+            .h-screen {
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            .overflow-hidden,
+            .overflow-auto,
+            .overflow-y-auto {
+                overflow: visible !important;
+                height: auto !important;
+            }
+
+            /* Content Layout: Table Left, Sidebar Right */
+            .flex-1 {
+                flex: 1 1 auto !important;
+            }
+
+            /* Main Content (Table) */
+            .main-content {
+                width: 65% !important;
+                border-right: 1px solid #ddd !important;
+                margin: 0 !important;
+                padding-right: 10px !important;
+            }
+
+            /* Sidebar (Validation/Abi) */
+            .sidebar-panel {
+                width: 35% !important;
+                border: none !important;
+                margin: 0 !important;
+                padding-left: 10px !important;
+                background: white !important;
+            }
+
+            .sidebar-panel>div {
+                box-shadow: none !important;
+                border: 1px solid #eee !important;
+                margin-bottom: 10px !important;
+            }
+
+            /* Table Optimization */
+            table {
+                width: 100% !important;
+                font-size: 9px !important;
+                border-collapse: collapse;
+            }
+
+            th,
+            td {
+                padding: 1px 2px !important;
+                height: auto !important;
+                border: 1px solid #ccc !important;
+            }
+
+            thead th {
+                background-color: #f0f0f0 !important;
+                color: black !important;
+            }
+
+            /* Input/Select styling for print */
+            select {
+                appearance: none;
+                -moz-appearance: none;
+                -webkit-appearance: none;
+                border: none;
+                background: transparent !important;
+                padding: 0;
+                font-size: 9px;
+                font-weight: bold;
+                color: black;
+            }
+
+            select::-ms-expand {
+                display: none;
+            }
+
+            input[type=number] {
+                border: none !important;
+                text-align: right;
+            }
+
+            /* Hide decorative or interactive elements */
+            button {
+                display: none !important;
+            }
+
+            .sticky {
+                position: static !important;
+            }
+
+            ::-webkit-scrollbar {
+                display: none;
+            }
+
+            /* Colors for orientation */
+            .field-row-I {
+                background-color: #dcfce7 !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .field-row-II {
+                background-color: #ffedd5 !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .field-row-III {
+                background-color: #dbeafe !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .field-row-Sport {
+                background-color: #f1f5f9 !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .bg-red-100 {
+                background-color: #fee2e2 !important;
+            }
+
+            .bg-yellow-100 {
+                background-color: #fef9c3 !important;
+            }
+
+            .bg-blue-50 {
+                background-color: #eff6ff !important;
+            }
+        }
     </style>
 </head>
 
@@ -407,30 +588,65 @@
         .inclusion-checkbox { width: 14px; height: 14px; cursor: pointer; }
         
         @media print {
-            @page { size: A4; margin: 1cm; }
-            body { background: white; overflow: visible !important; height: auto !important; }
-            #root { height: auto !important; }
+            @page { size: A4 portrait; margin: 0.5cm; }
+            body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 10px; }
+            #root { height: auto !important; overflow: visible !important; }
+            
+            /* Header adjustments */
+            header { background: white !important; color: black !important; border-bottom: 2px solid black; padding: 0 !important; margin-bottom: 0.5cm; position: relative !important; }
+            header h1 { color: black !important; font-size: 14pt !important; margin: 0; }
             header button, header input, header .print-hide { display: none !important; }
-            header { background: white !important; color: black !important; border-bottom: 2px solid black; padding: 0 !important; margin-bottom: 1cm; position: relative !important; }
-            header h1 { color: black !important; font-size: 16pt !important; }
-            header span { color: #333 !important; }
+            header span { color: #333 !important; font-size: 8pt !important; }
+
+            /* Main Container Layout */
+            .flex-col, .flex-row, .flex { display: flex !important; } /* Restore flex for side-by-side */
+            .h-screen { height: auto !important; overflow: visible !important; }
+            .overflow-hidden, .overflow-auto, .overflow-y-auto { overflow: visible !important; height: auto !important; }
+
+            /* Content Layout: Table Left, Sidebar Right */
+            .flex-1 { flex: 1 1 auto !important; }
             
-            .main-content, .sidebar-panel { width: 100% !important; border: none !important; overflow: visible !important; height: auto !important; display: block !important; }
-            .sidebar-panel { margin-top: 1cm; page-break-inside: avoid; }
+            /* Main Content (Table) */
+            .main-content { 
+                width: 65% !important; 
+                border-right: 1px solid #ddd !important; 
+                margin: 0 !important; 
+                padding-right: 10px !important;
+            }
+
+            /* Sidebar (Validation/Abi) */
+            .sidebar-panel { 
+                width: 35% !important; 
+                border: none !important; 
+                margin: 0 !important; 
+                padding-left: 10px !important;
+                background: white !important;
+            }
+            .sidebar-panel > div { box-shadow: none !important; border: 1px solid #eee !important; margin-bottom: 10px !important; }
+
+            /* Table Optimization */
+            table { width: 100% !important; font-size: 9px !important; border-collapse: collapse; }
+            th, td { padding: 1px 2px !important; height: auto !important; border: 1px solid #ccc !important; }
+            thead th { background-color: #f0f0f0 !important; color: black !important; }
             
-            .flex-col, .flex-row, .flex { display: block !important; }
-            .h-screen { height: auto !important; }
-            .overflow-auto, .overflow-hidden, .overflow-y-auto { overflow: visible !important; height: auto !important; }
-            
-            table { width: 100% !important; font-size: 10px !important; }
-            td, th { padding: 2px !important; height: auto !important; border: 1px solid #ddd !important; }
-            
-            .cell-select { appearance: none; -moz-appearance: none; -webkit-appearance: none; border: none; background: transparent !important; padding: 0; }
+            /* Input/Select styling for print */
+            select { appearance: none; -moz-appearance: none; -webkit-appearance: none; border: none; background: transparent !important; padding: 0; font-size: 9px; font-weight: bold; color: black; }
             select::-ms-expand { display: none; }
-            
+            input[type=number] { border: none !important; text-align: right; }
+
+            /* Hide decorative or interactive elements */
             button { display: none !important; }
-            ::-webkit-scrollbar { display: none; }
             .sticky { position: static !important; }
+            ::-webkit-scrollbar { display: none; }
+
+            /* Colors for orientation */
+            .field-row-I { background-color: #dcfce7 !important; -webkit-print-color-adjust: exact; }
+            .field-row-II { background-color: #ffedd5 !important; -webkit-print-color-adjust: exact; }
+            .field-row-III { background-color: #dbeafe !important; -webkit-print-color-adjust: exact; }
+            .field-row-Sport { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; }
+            .bg-red-100 { background-color: #fee2e2 !important; }
+            .bg-yellow-100 { background-color: #fef9c3 !important; }
+            .bg-blue-50 { background-color: #eff6ff !important; }
         }
     </style>
 </head>
