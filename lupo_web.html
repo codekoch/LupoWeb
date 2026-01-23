@@ -931,9 +931,13 @@
             const handleAbiChange = (pos, subCode) => {
                 const revertSub = (code) => {
                     setSelections(prevSel => {
-                        const newRow = Array(6).fill('');
-                        if (['D', 'M'].includes(code)) newRow.fill('S');
-                        else if (code === 'SP') newRow.fill('M');
+                        const newRow = [...prevSel[code]];
+                        // Downgrade LK to S in Q phase
+                        for (let i = 2; i <= 5; i++) {
+                            if (newRow[i] === 'LK') newRow[i] = 'S';
+                        }
+                        // Set Q2.2 to M (oral)
+                        if (newRow[5] !== '') newRow[5] = 'M';
                         return { ...prevSel, [code]: newRow };
                     });
                 };
@@ -1292,9 +1296,13 @@
             const handleAbiChange = (pos, subCode) => {
                 const revertSub = (code) => {
                     setSelections(prevSel => {
-                        const newRow = Array(6).fill('');
-                        if (['D', 'M'].includes(code)) newRow.fill('S');
-                        else if (code === 'SP') newRow.fill('M');
+                        const newRow = [...prevSel[code]];
+                        // Downgrade LK to S in Q phase
+                        for (let i = 2; i <= 5; i++) {
+                            if (newRow[i] === 'LK') newRow[i] = 'S';
+                        }
+                        // Set Q2.2 to M (oral)
+                        if (newRow[5] !== '') newRow[5] = 'M';
                         return { ...prevSel, [code]: newRow };
                     });
                 };
