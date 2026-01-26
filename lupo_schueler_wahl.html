@@ -10,7 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; overflow: hidden; }
-        .cell-select { appearance: none; text-align: center; font-size: 0.75rem; }
+        .cell-select { appearance: none; text-align: center; text-align-last: center; font-size: 0.75rem; }
         .overflow-x-auto::-webkit-scrollbar { height: 8px; }
         .overflow-y-auto::-webkit-scrollbar { width: 8px; }
         .overflow-x-auto::-webkit-scrollbar-thumb, .overflow-y-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -381,7 +381,7 @@
                             </h3>
                             <p className="text-xs text-blue-700 mt-1">
                                 Tragen Sie Ihre erwarteten Punktzahlen (0-15) ein. Pflichtkurse sind automatisch markiert. 
-                                Wählen Sie weitere Kurse ("Einkringeln"), um auf 35-40 Kurse zu kommen und Ihr Ergebnis zu optimieren.
+                                Wählen Sie weitere Kurse, um auf 35-40 Kurse zu kommen und Ihr Ergebnis zu optimieren.
                             </p>
                         </div>
                         <div className="text-right">
@@ -559,20 +559,23 @@
             const handleSelectionChange = (subCode, phaseIndex, value) => {
                 setSelections(prev => {
                     const newRow = [...prev[subCode]];
+                    const isAbi123 = [abiSubjects[1], abiSubjects[2], abiSubjects[3]].includes(subCode);
+                    const adjustVal = (idx, v) => (idx === 5 && v === 'S' && !isAbi123) ? 'M' : v;
+
                     if (value !== '' && newRow[phaseIndex] === '') {
                         for (let i = phaseIndex; i < 6; i++) {
                             if (i >= CONFIG.startPhase[subCode] && i <= CONFIG.endPhase[subCode]) { 
-                                if (newRow[i] === '') newRow[i] = value;
+                                if (newRow[i] === '') newRow[i] = adjustVal(i, value);
                             }
                         }
                     } else { 
                         if (phaseIndex === 2) {
-                            newRow[2] = value;
+                            newRow[2] = adjustVal(2, value);
                             [3,4,5].forEach(i => {
-                                if (i <= CONFIG.endPhase[subCode]) newRow[i] = value;
+                                if (i <= CONFIG.endPhase[subCode]) newRow[i] = adjustVal(i, value);
                             });
                         } else {
-                            newRow[phaseIndex] = value; 
+                            newRow[phaseIndex] = adjustVal(phaseIndex, value); 
                         }
                     }
                     if (value === 'LK' && phaseIndex < 2) return prev; 
@@ -840,7 +843,7 @@
                         <div className="flex flex-col">
                             <div className="flex items-baseline">
                                 <h1 className="text-lg font-bold mr-3">LuPO NRW Web</h1>
-                                <span className="text-xs text-blue-200 print:text-gray-600">Schülerversion + Abirechner</span>
+                                <span className="text-xs text-blue-200 print:text-gray-600">Schülerversion + Abitur-Zulassungsrechner</span>
                             </div>
                         </div>
                         <div className="flex gap-2 items-center print-hide">
@@ -955,8 +958,12 @@
                                         </tbody>
                                         <tfoot className="bg-gray-50 text-xs font-mono border-t-2 border-gray-300 sticky bottom-0 z-20 shadow-[0_-1px_3px_rgba(0,0,0,0.1)]">
                                             <tr>
-                                                <td className="p-2 border-r border-gray-300 font-bold bg-gray-50">Wochenstunden (Ø)</td>
-                                                {stats.totalHours.map((h, i) => <td key={i} className={"p-2 border-r border-gray-300 text-center font-bold " + (h < 34 ? "text-red-600" : "text-green-700")}>{h}</td>)}
+                                                <td className="p-2 border-r border-gray-300 font-bold bg-gray-50">Wochenstunden (Kurse)</td>
+                                                {stats.totalHours.map((h, i) => (
+                                                    <td key={i} className={"p-2 border-r border-gray-300 text-center font-bold " + (h < 34 ? "text-red-600" : "text-green-700")}>
+                                                        {h} <span className="text-gray-500 font-normal ml-0.5">({stats.courseCount[i]})</span>
+                                                    </td>
+                                                ))}
                                                 <td className="bg-gray-50"></td>
                                             </tr>
                                         </tfoot>
@@ -995,7 +1002,7 @@
                                             <h3 className={"font-bold text-sm mb-2 uppercase tracking-wide border-b pb-1 flex justify-between items-center " + (isInvalid ? "text-red-800 border-red-200" : (isWarning ? "text-orange-800 border-orange-200" : "text-green-800 border-green-200"))}>
                                                 <div className="flex items-center gap-2">
                                                     <StatusIcon size={14} />
-                                                    <span>{isInvalid ? "Ungültig" : (isWarning ? "Hinweise" : "Gültig")}</span>
+                                                    <span className={isInvalid ? "text-red-800" : "text-green-700"}>{isInvalid ? "Ungültig" : "Gültig"}</span>
                                                 </div>
                                                  <div className="flex gap-1">
                                                     {errorCount > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-200 text-red-900">{errorCount} Fehler</span>}
@@ -1012,9 +1019,14 @@
                                                 <ul className="space-y-1 overflow-y-auto flex-1 pr-1">
                                                     {warnings.map((w, i) => {
                                                         const isWarn = w.startsWith("Warnung:");
+                                                        const iconBg = isWarn ? "bg-orange-100 text-orange-600" : "bg-red-100 text-red-600";
+                                                        const Icon = isWarn ? Icons.AlertTriangle : Icons.Ban;
                                                         return (
-                                                        <li key={i} className={"text-[11px] flex items-start bg-white/50 p-1 rounded " + (isWarn ? "text-orange-900" : "text-red-900")}>
-                                                            <span className={"mr-1.5 mt-0.5 " + (isWarn ? "text-orange-500" : "text-red-500")}>•</span> {w.replace(/Fehler:|Warnung:|Konflikt:|Abitur:|Pflicht:/g, '').trim()}
+                                                        <li key={i} className={"text-[11px] flex items-center gap-2 bg-white/50 p-1 rounded " + (isWarn ? "text-orange-900" : "text-red-900")}>
+                                                            <div className={"shrink-0 w-6 h-6 rounded-full flex items-center justify-center " + iconBg}>
+                                                                <Icon size={14} />
+                                                            </div>
+                                                            <span className="leading-tight">{w.replace(/Fehler:|Warnung:|Konflikt:|Abitur:|Pflicht:/g, '').trim()}</span>
                                                         </li>
                                                         );
                                                     })}
