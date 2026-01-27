@@ -649,213 +649,293 @@
 
             useEffect(() => {
                 const SUBJECTS_LIST = subjects;
-            const msgs = [];
-            const hours = Array(6).fill(0);
-            const counts = Array(6).fill(0);
-            const activeSubs = SUBJECTS_LIST.filter(s => CONFIG.activeSubjects[s.code]);
-            let cntLang = 0; let cntSci = 0;
+            const validate = (currentSelections) => {
+                const selections = currentSelections; // Shadow global
+                const msgs = [];
+                const hours = Array(6).fill(0);
+                const counts = Array(6).fill(0);
+                const activeSubs = SUBJECTS_LIST.filter(s => CONFIG.activeSubjects[s.code]);
+                let cntLang = 0; let cntSci = 0;
 
-            // --- Calculation Pass ---
-            activeSubs.forEach(sub => {
-                const row = selections[sub.code];
-                const inQ1 = row[2] !== '' || row[3] !== '';
-                const inQ2 = row[4] !== '' || row[5] !== '';
+                // --- Calculation Pass ---
+                activeSubs.forEach(sub => {
+                    const row = selections[sub.code];
+                    const inQ1 = row[2] !== '' || row[3] !== '';
+                    const inQ2 = row[4] !== '' || row[5] !== '';
+                    
+                    if (inQ1 && inQ2) {
+                         if(sub.type === 'lang') cntLang++;
+                         if(sub.type === 'science') cntSci++;
+                    }
+    
+                    row.forEach((val, idx) => {
+                        if (!val) return;
+                        if (idx < CONFIG.startPhase[sub.code] || idx > CONFIG.endPhase[sub.code]) return;
+                        counts[idx]++;
+                        
+                        const h = sub.hours || { EF: 3, Q: 3, LK: 5, ZK: 3 };
+                        
+                        if (val === 'LK') hours[idx] += h.LK;
+                        else if (val === 'ZK') hours[idx] += h.ZK;
+                        else if (['S', 'M'].includes(val)) {
+                             if (idx < 2) { // EF
+                                hours[idx] += h.EF;
+                             } else { // Q-Phase
+                                hours[idx] += h.Q;
+                             }
+                        }
+                    });
+                });
+    
+                // --- Weekly Hours Check ---
+                const avgEF = (hours[0] + hours[1]) / 2;
+                const avgQ = (hours[2] + hours[3] + hours[4] + hours[5]) / 4;
+                const avgQ1 = (hours[2] + hours[3]) / 2; // Keep for specific feedback if needed, but rule is Q-Phase total
+                const avgQ2 = (hours[4] + hours[5]) / 2;
+    
+                if (avgEF < 34) msgs.push("Fehler: In EF durchschnittlich weniger als 34 Wochenstunden.");
+                if (avgQ < 34) msgs.push("Fehler: In der Q-Phase durchschnittlich weniger als 34 Wochenstunden.");
                 
-                if (inQ1 && inQ2) {
-                     if(sub.type === 'lang') cntLang++;
-                     if(sub.type === 'science') cntSci++;
-                }
+                if ((hours[0]+hours[1]+hours[2]+hours[3]+hours[4]+hours[5]) < 102) msgs.push("Fehler: Insgesamt fehlen Wochenstunden (Mind. 102 über 3 Jahre).");
+                if (Math.max(avgEF, avgQ1, avgQ2) > 40) msgs.push("Warnung: Sehr hohe Wochenstundenzahl (>40).");
+    
+                // --- Basic Continuity Checks ---
+                ['D', 'M', 'SP'].forEach(code => {
+                    if (CONFIG.activeSubjects[code]) {
+                        const subjObj = SUBJECTS_LIST.find(s=>s.code===code);
+                        if (subjObj && selections[code] && selections[code].some((c, i) => i >= CONFIG.startPhase[code] && i <= CONFIG.endPhase[code] && c === '')) 
+                            msgs.push("Fehler: " + subjObj.name + " muss durchgehend belegt werden.");
+                     }
+                });
 
-                row.forEach((val, idx) => {
-                    if (!val) return;
-                    if (idx < CONFIG.startPhase[sub.code] || idx > CONFIG.endPhase[sub.code]) return;
-                    counts[idx]++;
-                    
-                    const h = sub.hours || { EF: 3, Q: 3, LK: 5, ZK: 3 };
-                    
-                    if (val === 'LK') hours[idx] += h.LK;
-                    else if (val === 'ZK') hours[idx] += h.ZK;
-                    else if (['S', 'M'].includes(val)) {
-                         if (idx < 2) { // EF
-                            hours[idx] += h.EF;
-                         } else { // Q-Phase
-                            hours[idx] += h.Q;
-                         }
+                // --- APO-GOSt Written Requirements (EF) ---
+                // 1. D, M, FS must be written in EF
+                activeSubs.forEach(sub => {
+                    if (sub.code === 'D' || sub.code === 'M' || sub.type === 'lang') {
+                        const row = selections[sub.code];
+                        if (row[0] === 'M') msgs.push("Fehler: " + sub.name + " muss in EF.1 schriftlich belegt werden.");
+                        if (row[1] === 'M') msgs.push("Fehler: " + sub.name + " muss in EF.2 schriftlich belegt werden.");
                     }
                 });
-            });
 
-            // --- Weekly Hours Check ---
-            const avgEF = (hours[0] + hours[1]) / 2;
-            const avgQ = (hours[2] + hours[3] + hours[4] + hours[5]) / 4;
-            const avgQ1 = (hours[2] + hours[3]) / 2; // Keep for specific feedback if needed, but rule is Q-Phase total
-            const avgQ2 = (hours[4] + hours[5]) / 2;
-
-            if (avgEF < 34) msgs.push("Fehler: In EF durchschnittlich weniger als 34 Wochenstunden.");
-            if (avgQ < 34) msgs.push("Fehler: In der Q-Phase durchschnittlich weniger als 34 Wochenstunden.");
-            
-            if ((hours[0]+hours[1]+hours[2]+hours[3]+hours[4]+hours[5]) < 102) msgs.push("Fehler: Insgesamt fehlen Wochenstunden (Mind. 102 über 3 Jahre).");
-            if (Math.max(avgEF, avgQ1, avgQ2) > 40) msgs.push("Warnung: Sehr hohe Wochenstundenzahl (>40).");
-
-            // --- Basic Continuity Checks ---
-            ['D', 'M', 'SP'].forEach(code => {
-                if (CONFIG.activeSubjects[code]) {
-                    const subjObj = SUBJECTS_LIST.find(s=>s.code===code);
-                    if (subjObj && selections[code] && selections[code].some((c, i) => i >= CONFIG.startPhase[code] && i <= CONFIG.endPhase[code] && c === '')) 
-                        msgs.push("Fehler: " + subjObj.name + " muss durchgehend belegt werden.");
-                 }
-            });
-
-            // --- Art / Music / Lit ---
-            const hasArtEF = ['KU', 'MU'].some(code => CONFIG.activeSubjects[code] && selections[code][0] !== '' && selections[code][1] !== '');
-            if (!hasArtEF) msgs.push("Fehler: Kunst oder Musik muss in der EF belegt werden.");
-            
-            const hasArtQ1 = ['KU', 'MU', 'LIT', 'VP'].some(code => CONFIG.activeSubjects[code] && selections[code][2] !== '' && selections[code][3] !== '');
-            if (!hasArtQ1) msgs.push("Fehler: In Q1 (Q1.1 & Q1.2) muss Kunst, Musik oder Literatur belegt sein.");
-
-            // --- Sciences ---
-            const classicalNW = ['BI', 'PH', 'CH'];
-            const hasClassNW = classicalNW.some(code => CONFIG.activeSubjects[code] && selections[code].every(c => c !== ''));
-            if (!hasClassNW) msgs.push("Fehler: Eine klassische Naturwissenschaft (Bi, Ph, Ch) muss durchgehend belegt sein.");
-
-            // --- Languages ---
-            const hasLang = activeSubs.filter(s => s.type === 'lang').some(s => selections[s.code].every(c => c !== ''));
-            if (!hasLang) msgs.push("Fehler: Mindestens eine Fremdsprache muss durchgehend belegt sein.");
-            
-            // --- Focus (Schwerpunkt) ---
-            if (cntLang < 2 && cntSci < 2) msgs.push("Fehler: Schwerpunkt fehlt (2 FS oder 2 NW/IF in Q-Phase).");
-
-            // --- Religion / Philo (Allow Drop in Q2) ---
-            // Check EF.1 - Q1.2 (Indices 0, 1, 2, 3)
-            const relCheck = [0,1,2,3].every(idx => {
-                return (CONFIG.activeSubjects['KR'] && selections['KR'][idx]) || 
-                       (CONFIG.activeSubjects['ER'] && selections['ER'][idx]) || 
-                       (CONFIG.activeSubjects['PL'] && selections['PL'][idx]);
-            });
-            if (!relCheck) msgs.push("Fehler: Religion oder Philosophie muss mindestens bis Ende Q1 belegt sein.");
-
-            // --- Social Sciences (GE / SW) ---
-            ['GE', 'SW'].forEach(code => {
-                if (CONFIG.activeSubjects[code]) {
-                    const row = selections[code];
-                    const inQ1 = row[2] !== '' && row[3] !== '';
-                    const isZK_Q2 = row[4] === 'ZK' && row[5] === 'ZK';
-                    const sName = SUBJECTS_LIST.find(s=>s.code===code)?.name || code;
-                    if (!inQ1 && !isZK_Q2) msgs.push("Fehler: " + sName + " muss in Q1 belegt sein oder als Zusatzkurs in Q2.");
+                // 2. One Science must be written in EF
+                const sciSubs = activeSubs.filter(s => ['BI', 'PH', 'CH'].includes(s.code));
+                if (sciSubs.length > 0) { // Only if sciences are offered/active (which they usually are)
+                    if (!sciSubs.some(s => selections[s.code][0] === 'S')) msgs.push("Fehler: Mindestens eine klassische Naturwissenschaft muss in EF.1 schriftlich belegt werden.");
+                    if (!sciSubs.some(s => selections[s.code][1] === 'S')) msgs.push("Fehler: Mindestens eine klassische Naturwissenschaft muss in EF.2 schriftlich belegt werden.");
                 }
-            });
 
-            // --- LKs count ---
-            const countLKs = (idx) => activeSubs.map(s => selections[s.code][idx] === 'LK' ? 1 : 0).reduce((a,b)=>a+b, 0);
-            if (countLKs(2) !== 2) msgs.push("Fehler: In der Q-Phase müssen genau 2 Leistungskurse gewählt werden.");
-
-            // --- ABI CHECK (APO-GOSt §12) ---
-            const abis = [abiSubjects[1], abiSubjects[2], abiSubjects[3], abiSubjects[4]].filter(Boolean);
-            if (abis.length !== 4 && abis.length > 0) {
-                 msgs.push("Fehler: Es müssen genau 4 Abiturfächer gewählt werden.");
-            } else if (abis.length === 4) {
-                 const abiSubjs = abis.map(c => SUBJECTS_LIST.find(s => s.code === c));
-                 
-                 // 1. LK Rule: FS, M, NW, D
-                 const s1 = SUBJECTS_LIST.find(s => s.code === abiSubjects[1]);
-                 const validLK1 = ['D', 'M'].includes(s1.code) || s1.type === 'lang' || s1.type === 'science';
-                 if (!validLK1) msgs.push("Abitur: 1. LK muss D, M, FS oder NW sein.");
-
-                 // 2. Core Subjects (2 of D, M, FS)
-                 const countCore = abiSubjs.filter(s => s.code === 'D' || s.code === 'M' || s.type === 'lang').length;
-                 if (countCore < 2) msgs.push("Abitur: Mind. zwei der Fächer D, M, FS müssen gewählt werden.");
-
-                 // 3. Task Fields Coverage
-                 const hasI = abiSubjs.some(s => s.field === 'I');
-                 const hasII = abiSubjs.some(s => s.field === 'II' || ['KR', 'ER'].includes(s.code)); // Rel covers II
-                 const hasIII = abiSubjs.some(s => s.field === 'III');
-                 if (!hasI) msgs.push("Abitur: Aufgabenfeld I fehlt.");
-                 if (!hasII) msgs.push("Abitur: Aufgabenfeld II fehlt.");
-                 if (!hasIII) msgs.push("Abitur: Aufgabenfeld III fehlt.");
-
-                 // Field I must be D or FS
-                 const validI = abiSubjs.some(s => s.field === 'I' && (s.code === 'D' || s.type === 'lang'));
-                 if (!validI) msgs.push("Abitur: Aufgabenfeld I muss durch Deutsch oder Fremdsprache abgedeckt sein.");
-
-                 // Conflict Rel + Sport
-                 if (abiSubjs.some(s => ['KR', 'ER'].includes(s.code)) && abiSubjs.some(s => s.code === 'SP')) {
-                     msgs.push("Abitur: Religion und Sport schließen sich als Abiturfächer aus.");
-                 }
-
-                 // Sequence Checks
-                 abis.forEach((code, i) => {
-                     const isLK = i < 2; // 0 and 1 are LK
-                     const row = selections[code];
-                     if (row.slice(2,6).some(c => c === '')) msgs.push("Abitur: Fach " + code + " muss durchgehend belegt sein.");
-                     if (isLK && row.slice(2,6).some(c => c !== 'LK')) msgs.push("Abitur: " + code + " (1./2. Fach) muss durchgehend LK sein.");
-                     const writtenRange = row.slice(2, 5);
-                     if (writtenRange.some(c => c !== 'LK' && c !== 'S')) msgs.push("Abitur: " + code + " muss bis Q2.1 schriftlich sein.");
-                 });
-            }
-
-            // --- Forbidden Pairs ---
-            CONFIG.forbiddenPairs.forEach(pair => {
-                const rowA = selections[pair.a];
-                const rowB = selections[pair.b];
-                const hasConflict = rowA.some((val, idx) => val !== '' && rowB[idx] !== '');
-                if (hasConflict) {
-                    const nameA = SUBJECTS_LIST.find(s=>s.code===pair.a)?.name || pair.a;
-                    const nameB = SUBJECTS_LIST.find(s=>s.code===pair.b)?.name || pair.b;
-                    msgs.push("Konflikt: " + nameA + " und " + nameB + " nicht gleichzeitig im selben Halbjahr.");
+                // 3. One Social Science must be written in EF (excluding Religion)
+                const socialSubs = activeSubs.filter(s => s.field === 'II' && !['KR', 'ER', 'PL'].includes(s.code));
+                if (socialSubs.length > 0) {
+                    if (!socialSubs.some(s => selections[s.code][0] === 'S')) msgs.push("Fehler: Mindestens eine Gesellschaftswissenschaft muss in EF.1 schriftlich belegt werden.");
+                    if (!socialSubs.some(s => selections[s.code][1] === 'S')) msgs.push("Fehler: Mindestens eine Gesellschaftswissenschaft muss in EF.2 schriftlich belegt werden.");
                 }
-            });
 
-            // --- Continuity / No Late Entry Check ---
-            activeSubs.forEach(sub => {
-                const row = selections[sub.code];
-                const start = CONFIG.startPhase[sub.code];
-                const end = CONFIG.endPhase[sub.code];
-                for (let i = 0; i < 6; i++) {
-                    if (i <= start) continue; 
-                    if (i > end) continue;
-                    const currentVal = row[i];
-                    if (currentVal !== '') {
-                        const prevVal = row[i-1];
-                        if (prevVal === '') {
-                            // Helper to check if ANY religious subject was taken in prev semester
-                            const isRelSwitch = ['KR', 'ER', 'PL'].includes(sub.code) && 
-                                                ['KR', 'ER', 'PL'].some(rCode => CONFIG.activeSubjects[rCode] && selections[rCode][i-1] !== '');
-
-                            const isZkException = (i === 4 && currentVal === 'ZK');
-                            
-                            if (!isZkException && !isRelSwitch) {
-                                msgs.push("Fehler: " + sub.name + " (" + PHASES[i] + ") darf nicht gewählt werden, wenn es im vorherigen Halbjahr nicht belegt war.");
+                // --- Art / Music / Lit ---
+                const hasArtEF = ['KU', 'MU'].some(code => CONFIG.activeSubjects[code] && selections[code][0] !== '' && selections[code][1] !== '');
+                if (!hasArtEF) msgs.push("Fehler: Kunst oder Musik muss in der EF belegt werden.");
+                
+                const hasArtQ1 = ['KU', 'MU', 'LIT', 'VP'].some(code => CONFIG.activeSubjects[code] && selections[code][2] !== '' && selections[code][3] !== '');
+                if (!hasArtQ1) msgs.push("Fehler: In Q1 (Q1.1 & Q1.2) muss Kunst, Musik oder Literatur belegt sein.");
+    
+                // --- Sciences ---
+                const classicalNW = ['BI', 'PH', 'CH'];
+                const hasClassNW = classicalNW.some(code => CONFIG.activeSubjects[code] && selections[code].every(c => c !== ''));
+                if (!hasClassNW) msgs.push("Fehler: Eine klassische Naturwissenschaft (Bi, Ph, Ch) muss durchgehend belegt sein.");
+    
+                // --- Languages ---
+                const hasLang = activeSubs.filter(s => s.type === 'lang').some(s => selections[s.code].every(c => c !== ''));
+                if (!hasLang) msgs.push("Fehler: Mindestens eine Fremdsprache muss durchgehend belegt sein.");
+                
+                // --- Focus (Schwerpunkt) ---
+                if (cntLang < 2 && cntSci < 2) msgs.push("Fehler: Schwerpunkt fehlt (2 FS oder 2 NW/IF in Q-Phase).");
+    
+                // --- Religion / Philo (Allow Drop in Q2) ---
+                // Check EF.1 - Q1.2 (Indices 0, 1, 2, 3)
+                const relCheck = [0,1,2,3].every(idx => {
+                    return (CONFIG.activeSubjects['KR'] && selections['KR'][idx]) || 
+                           (CONFIG.activeSubjects['ER'] && selections['ER'][idx]) || 
+                           (CONFIG.activeSubjects['PL'] && selections['PL'][idx]);
+                });
+                if (!relCheck) msgs.push("Fehler: Religion oder Philosophie muss mindestens bis Ende Q1 belegt sein.");
+    
+                // --- Social Sciences (GE / SW) ---
+                ['GE', 'SW'].forEach(code => {
+                    if (CONFIG.activeSubjects[code]) {
+                        const row = selections[code];
+                        const inQ1 = row[2] !== '' && row[3] !== '';
+                        const isZK_Q2 = row[4] === 'ZK' && row[5] === 'ZK';
+                        const sName = SUBJECTS_LIST.find(s=>s.code===code)?.name || code;
+                        if (!inQ1 && !isZK_Q2) msgs.push("Fehler: " + sName + " muss in Q1 belegt sein oder als Zusatzkurs in Q2.");
+                    }
+                });
+    
+                // --- LKs count ---
+                const countLKs = (idx) => activeSubs.map(s => selections[s.code][idx] === 'LK' ? 1 : 0).reduce((a,b)=>a+b, 0);
+                if (countLKs(2) !== 2) msgs.push("Fehler: In der Q-Phase müssen genau 2 Leistungskurse gewählt werden.");
+    
+                // --- ABI CHECK (APO-GOSt §12) ---
+                const abis = [abiSubjects[1], abiSubjects[2], abiSubjects[3], abiSubjects[4]].filter(Boolean);
+                if (abis.length !== 4 && abis.length > 0) {
+                     msgs.push("Fehler: Es müssen genau 4 Abiturfächer gewählt werden.");
+                } else if (abis.length === 4) {
+                     const abiSubjs = abis.map(c => SUBJECTS_LIST.find(s => s.code === c));
+                     
+                     // 1. LK Rule: FS, M, NW, D
+                     const s1 = SUBJECTS_LIST.find(s => s.code === abiSubjects[1]);
+                     const validLK1 = ['D', 'M'].includes(s1.code) || s1.type === 'lang' || s1.type === 'science';
+                     if (!validLK1) msgs.push("Abitur: 1. LK muss D, M, FS oder NW sein.");
+    
+                     // 2. Core Subjects (2 of D, M, FS)
+                     const countCore = abiSubjs.filter(s => s.code === 'D' || s.code === 'M' || s.type === 'lang').length;
+                     if (countCore < 2) msgs.push("Abitur: Mind. zwei der Fächer D, M, FS müssen gewählt werden.");
+    
+                     // 3. Task Fields Coverage
+                     const hasI = abiSubjs.some(s => s.field === 'I');
+                     const hasII = abiSubjs.some(s => s.field === 'II' || ['KR', 'ER'].includes(s.code)); // Rel covers II
+                     const hasIII = abiSubjs.some(s => s.field === 'III');
+                     if (!hasI) msgs.push("Abitur: Aufgabenfeld I fehlt.");
+                     if (!hasII) msgs.push("Abitur: Aufgabenfeld II fehlt.");
+                     if (!hasIII) msgs.push("Abitur: Aufgabenfeld III fehlt.");
+    
+                     // Field I must be D or FS
+                     const validI = abiSubjs.some(s => s.field === 'I' && (s.code === 'D' || s.type === 'lang'));
+                     if (!validI) msgs.push("Abitur: Aufgabenfeld I muss durch Deutsch oder Fremdsprache abgedeckt sein.");
+    
+                     // Conflict Rel + Sport
+                     if (abiSubjs.some(s => ['KR', 'ER'].includes(s.code)) && abiSubjs.some(s => s.code === 'SP')) {
+                         msgs.push("Abitur: Religion und Sport schließen sich als Abiturfächer aus.");
+                     }
+    
+                     // Sequence Checks
+                     abis.forEach((code, i) => {
+                         const isLK = i < 2; // 0 and 1 are LK
+                         const row = selections[code];
+                         if (row.slice(2,6).some(c => c === '')) msgs.push("Abitur: Fach " + code + " muss durchgehend belegt sein.");
+                         if (isLK && row.slice(2,6).some(c => c !== 'LK')) msgs.push("Abitur: " + code + " (1./2. Fach) muss durchgehend LK sein.");
+                         const writtenRange = row.slice(2, 5);
+                         if (writtenRange.some(c => c !== 'LK' && c !== 'S')) msgs.push("Abitur: " + code + " muss bis Q2.1 schriftlich sein.");
+                     });
+                }
+    
+                // --- Forbidden Pairs ---
+                CONFIG.forbiddenPairs.forEach(pair => {
+                    const rowA = selections[pair.a];
+                    const rowB = selections[pair.b];
+                    const hasConflict = rowA.some((val, idx) => val !== '' && rowB[idx] !== '');
+                    if (hasConflict) {
+                        const nameA = SUBJECTS_LIST.find(s=>s.code===pair.a)?.name || pair.a;
+                        const nameB = SUBJECTS_LIST.find(s=>s.code===pair.b)?.name || pair.b;
+                        msgs.push("Konflikt: " + nameA + " und " + nameB + " nicht gleichzeitig im selben Halbjahr.");
+                    }
+                });
+    
+                // --- Continuity / No Late Entry Check ---
+                activeSubs.forEach(sub => {
+                    const row = selections[sub.code];
+                    const start = CONFIG.startPhase[sub.code];
+                    const end = CONFIG.endPhase[sub.code];
+                    for (let i = 0; i < 6; i++) {
+                        if (i <= start) continue; 
+                        if (i > end) continue;
+                        const currentVal = row[i];
+                        if (currentVal !== '') {
+                            const prevVal = row[i-1];
+                            if (prevVal === '') {
+                                // Helper to check if ANY religious subject was taken in prev semester
+                                const isRelSwitch = ['KR', 'ER', 'PL'].includes(sub.code) && 
+                                                    ['KR', 'ER', 'PL'].some(rCode => CONFIG.activeSubjects[rCode] && selections[rCode][i-1] !== '');
+    
+                                const isZkException = (i === 4 && currentVal === 'ZK');
+                                
+                                if (!isZkException && !isRelSwitch) {
+                                    msgs.push("Fehler: " + sub.name + " (" + PHASES[i] + ") darf nicht gewählt werden, wenn es im vorherigen Halbjahr nicht belegt war.");
+                                }
                             }
                         }
                     }
-                }
-            });
-            
-            // --- Course Change Restriction (M -> S Block) ---
-            activeSubs.forEach(sub => {
-                const row = selections[sub.code];
-                [3, 4, 5].forEach(i => {
-                    const currentVal = row[i];
-                    const prevVal = row[i-1]; 
-                    const isWritten = (val) => val === 'S' || val === 'LK';
-                    const isOral = (val) => val === 'M';
-                    if (isWritten(currentVal) && isOral(prevVal)) {
-                         msgs.push("Fehler: " + sub.name + " (" + PHASES[i] + ") darf nicht schriftlich gewählt werden, wenn es im vorherigen Halbjahr nur mündlich belegt war.");
+                });
+                
+                // --- Course Change Restriction (M -> S Block) ---
+                activeSubs.forEach(sub => {
+                    const row = selections[sub.code];
+                    [3, 4, 5].forEach(i => {
+                        const currentVal = row[i];
+                        const prevVal = row[i-1]; 
+                        const isWritten = (val) => val === 'S' || val === 'LK';
+                        const isOral = (val) => val === 'M';
+                        if (isWritten(currentVal) && isOral(prevVal)) {
+                             msgs.push("Fehler: " + sub.name + " (" + PHASES[i] + ") darf nicht schriftlich gewählt werden, wenn es im vorherigen Halbjahr nur mündlich belegt war.");
+                        }
+                    });
+                });
+    
+                // --- ZK Exclusivity Check ---
+                [4, 5].forEach(i => {
+                    let zkCount = 0;
+                    activeSubs.forEach(sub => {
+                        if (selections[sub.code][i] === 'ZK') zkCount++;
+                    });
+                    if (zkCount > 1) {
+                         msgs.push("Fehler: Es darf zu einem Zeitpunkt (" + PHASES[i] + ") nur ein Fach als Zusatzkurs (ZK) gewählt werden.");
                     }
                 });
-            });
+    
+                return { msgs, hours, counts };
+            };
 
-            // --- ZK Exclusivity Check ---
-            [4, 5].forEach(i => {
-                let zkCount = 0;
-                activeSubs.forEach(sub => {
-                    if (selections[sub.code][i] === 'ZK') zkCount++;
-                });
-                if (zkCount > 1) {
-                     msgs.push("Fehler: Es darf zu einem Zeitpunkt (" + PHASES[i] + ") nur ein Fach als Zusatzkurs (ZK) gewählt werden.");
-                }
-            });
+            const { msgs, hours, counts } = validate(selections);
+            const hasErrors = msgs.some(m => m.startsWith('Fehler'));
 
+            if (!hasErrors) {
+                 const activeSubs = SUBJECTS_LIST.filter(s => CONFIG.activeSubjects[s.code]);
+                 
+                 // 1. Can Deselect?
+                 let canDeselect = false;
+                 checkDeselect:
+                 for (const sub of activeSubs) {
+                     const code = sub.code;
+                     for (let i = 2; i <= 5; i++) {
+                         if (selections[code][i] !== '') {
+                             const newSelections = { ...selections, [code]: [...selections[code]] };
+                             newSelections[code][i] = '';
+                             
+                             const res = validate(newSelections);
+                             if (!res.msgs.some(m => m.startsWith('Fehler'))) {
+                                 canDeselect = true;
+                                 break checkDeselect;
+                             }
+                         }
+                     }
+                 }
+                 if (!canDeselect) {
+                     msgs.push("Warnung: Keine weiteren Abwahlen in der Q-Phase möglich.");
+                 }
+
+                 // 2. Can Switch to Oral?
+                 let canSwitchToOral = false;
+                 checkSwitch:
+                 for (const sub of activeSubs) {
+                     const code = sub.code;
+                     for (let i = 2; i <= 5; i++) {
+                         if (selections[code][i] === 'S' || selections[code][i] === 'LK') {
+                             const newSelections = { ...selections, [code]: [...selections[code]] };
+                             newSelections[code][i] = 'M';
+                             
+                             const res = validate(newSelections);
+                             if (!res.msgs.some(m => m.startsWith('Fehler'))) {
+                                 canSwitchToOral = true;
+                                 break checkSwitch;
+                             }
+                         }
+                     }
+                 }
+                 if (!canSwitchToOral) {
+                     msgs.push("Warnung: Kein weiterer Wechsel von Schriftlich auf Mündlich in der Q-Phase möglich.");
+                 }
+            }
+    
             setWarnings(msgs);
             setStats({ totalHours: hours, courseCount: counts });
         }, [selections, abiSubjects]);
