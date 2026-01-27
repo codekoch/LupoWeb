@@ -1350,15 +1350,15 @@
                                                 </React.Fragment>
                                             )})}
                                         </tbody>
-                                        <tfoot className="bg-gray-50 text-xs font-mono border-t-2 border-gray-300 sticky bottom-0 z-20 shadow-[0_-1px_3px_rgba(0,0,0,0.1)]">
+                                        <tfoot className="text-xs font-mono">
                                             <tr>
-                                                <td className="p-2 border-r border-gray-300 font-bold bg-gray-50">Wochenstunden (Kurse)</td>
+                                                <td className="p-2 border-r border-gray-300 font-bold bg-gray-50 sticky bottom-0 z-20 border-t-2 border-gray-300 shadow-[0_-1px_3px_rgba(0,0,0,0.1)]">Wochenstunden (Kurse)</td>
                                                 {stats.totalHours.map((h, i) => (
-                                                    <td key={i} className={"p-2 border-r border-gray-300 text-center font-bold " + (h < 34 ? "text-red-600" : "text-green-700")}>
+                                                    <td key={i} className={"p-2 border-r border-gray-300 text-center font-bold sticky bottom-0 z-20 border-t-2 border-gray-300 shadow-[0_-1px_3px_rgba(0,0,0,0.1)] bg-gray-50 " + (h < 34 ? "text-red-600" : "text-green-700")}>
                                                         {h} <span className="text-gray-500 font-normal ml-0.5">({stats.courseCount[i]})</span>
                                                     </td>
                                                 ))}
-                                                <td className="bg-gray-50"></td>
+                                                <td className="bg-gray-50 sticky bottom-0 z-20 border-t-2 border-gray-300 shadow-[0_-1px_3px_rgba(0,0,0,0.1)]"></td>
                                             </tr>
                                         </tfoot>
                                     </table>
