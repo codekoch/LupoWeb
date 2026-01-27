@@ -103,7 +103,9 @@
             AlertTriangle: (p) => <IconWrapper {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></IconWrapper>,
             Download: (p) => <IconWrapper {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></IconWrapper>,
             Calculator: (p) => <IconWrapper {...p}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></IconWrapper>,
-            CheckCircle: (p) => <IconWrapper {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></IconWrapper>
+            CheckCircle: (p) => <IconWrapper {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></IconWrapper>,
+            Maximize: (p) => <IconWrapper {...p}><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></IconWrapper>,
+            Minimize: (p) => <IconWrapper {...p}><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></IconWrapper>
         };
         const CONFIG = {"activeSubjects":{"D":true,"E":true,"F":true,"L":true,"S":true,"I":true,"KU":true,"MU":true,"LIT":true,"VP":false,"GE":true,"SW":true,"EK":true,"PA":true,"PL":true,"KR":true,"ER":true,"M":true,"BI":true,"PH":true,"CH":true,"IF":true,"VX-D":true,"VX-E":true,"VX-M":true,"SP":true},"zkAllowed":{"D":false,"E":false,"F":false,"L":false,"S":false,"I":false,"KU":false,"MU":false,"LIT":false,"VP":false,"GE":true,"SW":true,"EK":false,"PA":false,"PL":false,"KR":false,"ER":false,"M":false,"BI":false,"PH":false,"CH":false,"IF":false,"VX-D":false,"VX-E":false,"VX-M":false,"SP":false},"startPhase":{"D":0,"E":0,"F":0,"L":0,"S":0,"I":0,"KU":0,"MU":0,"LIT":2,"VP":2,"GE":0,"SW":0,"EK":0,"PA":0,"PL":0,"KR":0,"ER":0,"M":0,"BI":0,"PH":0,"CH":0,"IF":0,"VX-D":0,"VX-E":0,"VX-M":0,"SP":0},"endPhase":{"D":5,"E":5,"F":5,"L":5,"S":5,"I":5,"KU":5,"MU":5,"LIT":3,"VP":5,"GE":5,"SW":5,"EK":5,"PA":5,"PL":5,"KR":5,"ER":5,"M":5,"BI":5,"PH":5,"CH":5,"IF":5,"VX-D":1,"VX-E":1,"VX-M":1,"SP":5},"forbiddenPairs":[{"a":"KR","b":"ER"},{"a":"KR","b":"PL"},{"a":"ER","b":"PL"},{"a":"MU","b":"KU"},{"a":"LIT","b":"MU"},{"a":"LIT","b":"KU"}]};
         const PHASES = ['EF.1', 'EF.2', 'Q1.1', 'Q1.2', 'Q2.1', 'Q2.2'];
@@ -511,6 +513,21 @@
             const [studentName, setStudentName] = useState('');
             const fileInputRef = useRef(null);
 
+            // Fullscreen logic
+            const [isFullscreen, setIsFullscreen] = useState(false);
+            useEffect(() => {
+                const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+                document.addEventListener('fullscreenchange', handleFsChange);
+                return () => document.removeEventListener('fullscreenchange', handleFsChange);
+            }, []);
+            const toggleFullscreen = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                } else {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                }
+            };
+
             const handleSave = () => {
                 if (!studentName.trim()) { alert('Bitte geben Sie zuerst Ihren Namen ein.'); return; }
                 const data = { selections, abiSubjects, studentName, grades, inclusions }; // Added grades
@@ -670,13 +687,13 @@
 
             // --- Weekly Hours Check ---
             const avgEF = (hours[0] + hours[1]) / 2;
-            const avgQ1 = (hours[2] + hours[3]) / 2;
+            const avgQ = (hours[2] + hours[3] + hours[4] + hours[5]) / 4;
+            const avgQ1 = (hours[2] + hours[3]) / 2; // Keep for specific feedback if needed, but rule is Q-Phase total
             const avgQ2 = (hours[4] + hours[5]) / 2;
-            const totalAvg = avgEF + avgQ1 + avgQ2;
 
-            if (avgEF < 34) msgs.push("Warnung: In EF durchschnittlich weniger als 34 Wochenstunden.");
-            if (avgQ1 < 34) msgs.push("Warnung: In Q1 durchschnittlich weniger als 34 Wochenstunden.");
-            if (avgQ2 < 34) msgs.push("Warnung: In Q2 durchschnittlich weniger als 34 Wochenstunden.");
+            if (avgEF < 34) msgs.push("Fehler: In EF durchschnittlich weniger als 34 Wochenstunden.");
+            if (avgQ < 34) msgs.push("Fehler: In der Q-Phase durchschnittlich weniger als 34 Wochenstunden.");
+            
             if ((hours[0]+hours[1]+hours[2]+hours[3]+hours[4]+hours[5]) < 102) msgs.push("Fehler: Insgesamt fehlen Wochenstunden (Mind. 102 über 3 Jahre).");
             if (Math.max(avgEF, avgQ1, avgQ2) > 40) msgs.push("Warnung: Sehr hohe Wochenstundenzahl (>40).");
 
@@ -708,13 +725,14 @@
             // --- Focus (Schwerpunkt) ---
             if (cntLang < 2 && cntSci < 2) msgs.push("Fehler: Schwerpunkt fehlt (2 FS oder 2 NW/IF in Q-Phase).");
 
-            // --- Religion / Philo ---
-            const relCheck = [0,1,2,3,4,5].every(idx => {
+            // --- Religion / Philo (Allow Drop in Q2) ---
+            // Check EF.1 - Q1.2 (Indices 0, 1, 2, 3)
+            const relCheck = [0,1,2,3].every(idx => {
                 return (CONFIG.activeSubjects['KR'] && selections['KR'][idx]) || 
                        (CONFIG.activeSubjects['ER'] && selections['ER'][idx]) || 
                        (CONFIG.activeSubjects['PL'] && selections['PL'][idx]);
             });
-            if (!relCheck) msgs.push("Warnung: Religion oder Philosophie muss i.d.R. durchgehend belegt sein.");
+            if (!relCheck) msgs.push("Fehler: Religion oder Philosophie muss mindestens bis Ende Q1 belegt sein.");
 
             // --- Social Sciences (GE / SW) ---
             ['GE', 'SW'].forEach(code => {
@@ -799,8 +817,13 @@
                     if (currentVal !== '') {
                         const prevVal = row[i-1];
                         if (prevVal === '') {
+                            // Helper to check if ANY religious subject was taken in prev semester
+                            const isRelSwitch = ['KR', 'ER', 'PL'].includes(sub.code) && 
+                                                ['KR', 'ER', 'PL'].some(rCode => CONFIG.activeSubjects[rCode] && selections[rCode][i-1] !== '');
+
                             const isZkException = (i === 4 && currentVal === 'ZK');
-                            if (!isZkException) {
+                            
+                            if (!isZkException && !isRelSwitch) {
                                 msgs.push("Fehler: " + sub.name + " (" + PHASES[i] + ") darf nicht gewählt werden, wenn es im vorherigen Halbjahr nicht belegt war.");
                             }
                         }
@@ -870,6 +893,9 @@
                             <button onClick={handleSave} className="bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs border border-blue-600">Speichern</button>
                              <button onClick={handleLoadTrigger} className="bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs border border-blue-600">Laden</button>
                              <button onClick={handlePrint} className="bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs border border-blue-600">Drucken</button>
+                             <button onClick={toggleFullscreen} className="bg-blue-700 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs border border-blue-600" title="Vollbild umschalten">
+                                 {isFullscreen ? <Icons.Minimize size={14}/> : <Icons.Maximize size={14}/>}
+                             </button>
                         </div>
                     </header>
                     
