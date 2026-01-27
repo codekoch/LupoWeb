@@ -49,7 +49,7 @@ Speichern/Laden: Planungen können als lokale Datei (.txt/.json) gespeichert und
 
 🚀 Nutzung
 Für Administratoren / Oberstufenkoordinatoren
-Lade die Datei lupo_web.html herunter und öffne sie im Browser.
+Lade die Datei lupo_web.html herunter und öffne sie im Browser (am besten an einem PC).
 
 Konfiguriere das Fächerangebot deiner Schule (Reiter "Konfiguration").
 
