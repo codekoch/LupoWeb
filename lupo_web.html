@@ -982,7 +982,11 @@
                 criteria.push({ label: "Mindestens 200 Punkte", fulfilled: EI >= 200, value: EI });
                 criteria.push({ label: "Maximal 3 LK-Defizite", fulfilled: lkDefs <= 3, value: lkDefs });
                 const maxDefs = countCourses >= 38 ? 8 : 7;
-                criteria.push({ label: "Maximal " + maxDefs + " Defizite insgesamt", fulfilled: defs <= maxDefs, value: defs });
+                let deficitLabel = "Maximal " + maxDefs + " Defizite insgesamt";
+                if (defs === 8 && countCourses < 38) {
+                    deficitLabel += " (bei 38 Kursen sind 8 Defizite möglich)";
+                }
+                criteria.push({ label: deficitLabel, fulfilled: defs <= maxDefs, value: defs });
                 criteria.push({ label: "Kein Kurs mit 0 Punkten", fulfilled: !zeroPointCourseIncluded });
                 // criteria.push({ label: "Maximal 3 Sportkurse", fulfilled: sportCount <= 3 }); // Removed per user request
 
