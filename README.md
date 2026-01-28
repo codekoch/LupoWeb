@@ -1,4 +1,4 @@
-# 🎓 <a href="https://codekoch.github.io/LupoWeb/lupo_web.html">LuPO Web </a>- NRW Oberstufen-Planung im Browser
+# 🎓 <a href="https://codekoch.github.io/LupoWeb/lupo_web.html">Lupo Web </a>- NRW Oberstufen-Planung im Browser
 <p align="center">
  <a href="https://codekoch.github.io/LupoWeb/lupo_web.html">
         <img src="lupo_web.png" width="45%" alt="lupo_web.html">
