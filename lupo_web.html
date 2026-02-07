@@ -491,9 +491,10 @@
     
                 // --- ABI CHECK (APO-GOSt §12) ---
                 const abis = [abiSubjects[1], abiSubjects[2], abiSubjects[3], abiSubjects[4]].filter(Boolean);
-                if (abis.length !== 4 && abis.length > 0) {
+                if (abis.length !== 4) {
                      msgs.push("Fehler: Es müssen genau 4 Abiturfächer gewählt werden.");
-                } else if (abis.length === 4) {
+                }
+                if (abis.length === 4) {
                      const abiSubjs = abis.map(c => SUBJECTS_LIST.find(s => s.code === c));
                      
                      // 1. LK Rule: FS, M, NW, D
@@ -1548,6 +1549,36 @@
             const [config, setConfig] = useState(DEFAULT_CONFIG);
             const [subjects, setSubjects] = useState(INITIAL_SUBJECTS);
             const [newSub, setNewSub] = useState({ code: '', name: '', field: 'Sonstiges' });
+
+            // Drag and Drop State
+            const [draggedCode, setDraggedCode] = useState(null);
+
+            const handleDragStart = (e, code) => {
+                setDraggedCode(code);
+                e.dataTransfer.effectAllowed = 'move';
+            };
+
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            };
+
+            const handleDrop = (e, targetCode) => {
+                e.preventDefault();
+                if (!draggedCode || draggedCode === targetCode) return;
+
+                setSubjects(prev => {
+                    const idxDrag = prev.findIndex(s => s.code === draggedCode);
+                    const idxDrop = prev.findIndex(s => s.code === targetCode);
+                    if (idxDrag < 0 || idxDrop < 0) return prev;
+
+                    const newSubjects = [...prev];
+                    const [movedItem] = newSubjects.splice(idxDrag, 1);
+                    newSubjects.splice(idxDrop, 0, movedItem);
+                    return newSubjects;
+                });
+                setDraggedCode(null);
+            };
             const [selections, setSelections] = useState(() => {
                 const init = {};
                 subjects.forEach(s => {
@@ -1752,44 +1783,59 @@
                                     <div>
                                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Fächerangebot</h3>
                                         <div className="space-y-0.5">
-                                            <div className="space-y-0.5">
-                                                {subjects.map(sub => (
-                                                    <div key={sub.code} className="bg-slate-700/50 hover:bg-slate-700 p-1.5 rounded text-xs group flex flex-col gap-1">
-                                                        <div className="flex items-center">
-                                                            <input type="checkbox" checked={config.activeSubjects[sub.code]} onChange={() => toggleSubjectActive(sub.code)} className="mr-2" />
-                                                            <span className={"flex-1 truncate font-bold " + (config.activeSubjects[sub.code] ? "text-slate-200" : "text-slate-500")} title={sub.name}>{sub.code} - {sub.name}</span>
-                                                            <div className="flex gap-1 items-center">
-                                                                <span title="ZK erlaubt?" className="text-[10px] text-slate-400">ZK</span>
-                                                                <input type="checkbox" checked={config.zkAllowed[sub.code]} onChange={() => toggleZK(sub.code)} className="mr-2 h-3 w-3" />
-                                                            </div>
+                                            <div className="space-y-4">
+                                                {['I', 'II', 'III', 'Sport', 'Sonstiges'].map(field => (
+                                                    <div key={field}>
+                                                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 px-1 border-b border-slate-700 pb-0.5">{FIELDS[field]}</h4>
+                                                        <div className="space-y-0.5">
+                                                            {subjects.filter(s => s.field === field).map(sub => (
+                                                                <div
+                                                                    key={sub.code}
+                                                                    draggable="true"
+                                                                    onDragStart={(e) => handleDragStart(e, sub.code)}
+                                                                    onDragOver={handleDragOver}
+                                                                    onDrop={(e) => handleDrop(e, sub.code)}
+                                                                    className={"bg-slate-700/50 hover:bg-slate-700 p-1.5 rounded text-xs group flex flex-col gap-1 transition-opacity cursor-move " + (draggedCode === sub.code ? "opacity-40" : "")}
+                                                                >
+                                                                    <div className="flex items-center">
+                                                                        <input type="checkbox" checked={config.activeSubjects[sub.code]} onChange={() => toggleSubjectActive(sub.code)} className="mr-2 cursor-pointer" />
+                                                                        <span className={"flex-1 truncate font-bold select-none " + (config.activeSubjects[sub.code] ? "text-slate-200" : "text-slate-500")} title={sub.name}>{sub.code} - {sub.name}</span>
+                                                                        <div className="flex gap-1 items-center">
+                                                                            <span title="ZK erlaubt?" className="text-[10px] text-slate-400 select-none">ZK</span>
+                                                                            <input type="checkbox" checked={config.zkAllowed[sub.code]} onChange={() => toggleZK(sub.code)} className="mr-2 h-3 w-3 cursor-pointer" />
+                                                                        </div>
+                                                                    </div>
+                                                                    {config.activeSubjects[sub.code] && (
+                                                                        <div className="pl-6 flex flex-wrap gap-2 text-[10px] text-slate-400 items-center">
+                                                                            <span className="select-none">Std:</span>
+                                                                            <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
+                                                                                <span className="text-slate-500 select-none">EF</span>
+                                                                                <input type="number" className="w-6 bg-transparent text-center text-slate-200 outline-none" value={sub.hours.EF} onChange={(e) => handleUpdateHours(sub.code, 'EF', e.target.value)} />
+                                                                            </div>
+                                                                            <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
+                                                                                <span className="text-slate-500 select-none">Q</span>
+                                                                                <input type="number" className="w-6 bg-transparent text-center text-slate-200 outline-none" value={sub.hours.Q} onChange={(e) => handleUpdateHours(sub.code, 'Q', e.target.value)} />
+                                                                            </div>
+                                                                            <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
+                                                                                <span className="text-slate-500 select-none">LK</span>
+                                                                                <input type="number" className="w-6 bg-transparent text-center text-slate-200 outline-none" value={sub.hours.LK} onChange={(e) => handleUpdateHours(sub.code, 'LK', e.target.value)} />
+                                                                            </div>
+                                                                            <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
+                                                                                <span className="text-slate-500 select-none">Start/End</span>
+                                                                                <select value={config.startPhase[sub.code]} onChange={(e) => setStartPhase(sub.code, e.target.value)} className="bg-transparent text-slate-200 w-8 outline-none cursor-pointer">
+                                                                                    {PHASES.map((p, i) => <option key={i} value={i}>{p}</option>)}
+                                                                                </select>
+                                                                                <span className="select-none">-</span>
+                                                                                <select value={config.endPhase[sub.code]} onChange={(e) => setEndPhase(sub.code, e.target.value)} className="bg-transparent text-slate-200 w-8 outline-none cursor-pointer">
+                                                                                    {PHASES.map((p, i) => <option key={i} value={i}>{p}</option>)}
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                            {subjects.filter(s => s.field === field).length === 0 && <div className="text-[10px] text-slate-600 italic p-1">Keine Fächer</div>}
                                                         </div>
-                                                        {config.activeSubjects[sub.code] && (
-                                                            <div className="pl-6 flex flex-wrap gap-2 text-[10px] text-slate-400 items-center">
-                                                                <span>Std:</span>
-                                                                <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
-                                                                    <span className="text-slate-500">EF</span>
-                                                                    <input type="number" className="w-6 bg-transparent text-center text-slate-200 outline-none" value={sub.hours.EF} onChange={(e) => handleUpdateHours(sub.code, 'EF', e.target.value)} />
-                                                                </div>
-                                                                <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
-                                                                    <span className="text-slate-500">Q</span>
-                                                                    <input type="number" className="w-6 bg-transparent text-center text-slate-200 outline-none" value={sub.hours.Q} onChange={(e) => handleUpdateHours(sub.code, 'Q', e.target.value)} />
-                                                                </div>
-                                                                <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
-                                                                    <span className="text-slate-500">LK</span>
-                                                                    <input type="number" className="w-6 bg-transparent text-center text-slate-200 outline-none" value={sub.hours.LK} onChange={(e) => handleUpdateHours(sub.code, 'LK', e.target.value)} />
-                                                                </div>
-                                                                <div className="flex gap-1 items-center bg-slate-900 rounded px-1 border border-slate-600">
-                                                                    <span className="text-slate-500">Start/End</span>
-                                                                    <select value={config.startPhase[sub.code]} onChange={(e) => setStartPhase(sub.code, e.target.value)} className="bg-transparent text-slate-200 w-8 outline-none">
-                                                                        {PHASES.map((p, i) => <option key={i} value={i}>{p}</option>)}
-                                                                    </select>
-                                                                    <span>-</span>
-                                                                    <select value={config.endPhase[sub.code]} onChange={(e) => setEndPhase(sub.code, e.target.value)} className="bg-transparent text-slate-200 w-8 outline-none">
-                                                                        {PHASES.map((p, i) => <option key={i} value={i}>{p}</option>)}
-                                                                    </select>
-                                                                </div>
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 ))}
                                                 <div className="bg-slate-800 border border-slate-600 border-dashed p-2 rounded mt-2">
