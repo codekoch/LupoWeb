@@ -1407,7 +1407,10 @@
                                                                     else if (val === 'ZK') bgClass = "bg-yellow-100";
             
                                                                     const allowedOpts = COURSE_OPTS.filter(opt => {
-                                                                        if (opt.val === 'LK') return idx >= 2; 
+                                                                        if (opt.val === 'LK') {
+                                                                            // LK nur ab Q1 (idx >= 2) UND wenn Stunden > 0
+                                                                            return idx >= 2 && (sub.hours?.LK > 0);
+                                                                        }
                                                                         if (opt.val === 'ZK') return idx >= 4 && CONFIG.zkAllowed[sub.code];
                                                                         return true;
                                                                     });
@@ -1927,7 +1930,10 @@
                                                                     else if (val === 'ZK') bgClass = "bg-yellow-100 text-yellow-900";
 
                                                                     const allowedOpts = COURSE_OPTS.filter(opt => {
-                                                                        if (opt.val === 'LK') return idx >= 2;
+                                                                        if (opt.val === 'LK') {
+                                                                            // LK nur ab Q1 (idx >= 2) UND wenn Stunden > 0
+                                                                            return idx >= 2 && (sub.hours?.LK > 0);
+                                                                        }
                                                                         if (opt.val === 'ZK') return idx >= 4 && config.zkAllowed[sub.code];
                                                                         return true;
                                                                     });
