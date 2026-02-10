@@ -58,7 +58,9 @@ Klicke auf "Exportieren (.html)".
 Verteile die heruntergeladene Datei (lupo_schueler_wahl.html) an die Schülerschaft (z.B. via Moodle, Teams oder E-Mail).
 
 Für Schülerinnen und Schüler
-Öffne die erhaltene HTML-Datei im Browser (am PC, Tablet oder Handy).
+Öffne die erhaltene HTML-Datei im Browser (am PC, Tablet* oder Handy).
+(*Auf manchen Tablets ist allerdings das Öffnen von html-Dateien eingeschränkt. In diesem Fall sollte die Variante
+über einen Server (wie z.B. moodle) gewählt werden.)
 
 Wähle deine Fächer und Abiturfächer.
 
