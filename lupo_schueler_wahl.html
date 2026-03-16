@@ -763,19 +763,37 @@
                 if (cntLang < 2 && cntSci < 2) {
                     msgs.push("Fehler: Schwerpunkt fehlt (2 FS oder 2 NW/IF in Q-Phase).");
                 } else {
-                    let hasWrittenFocus = false;
+                    let isValidFocus = false;
+                    let langError = "";
+                    let sciError = "";
+
                     // Sprachlicher Schwerpunkt
                     if (cntLang >= 2) {
-                        const writtenLangInQ = activeSubs.some(s => s.type === 'lang' && selections[s.code].slice(2, 6).some(v => v === 'S' || v === 'LK'));
-                        if (writtenLangInQ) hasWrittenFocus = true;
+                        const writtenLangs = activeSubs.filter(s => s.type === 'lang' && selections[s.code].slice(2, 6).some(v => v === 'S' || v === 'LK')).length;
+                        if (writtenLangs < 2) {
+                            langError = "Fehler: Beim sprachlichen Schwerpunkt müssen beide Fremdsprachen schriftlich in der Q-Phase belegt sein.";
+                        } else {
+                            isValidFocus = true;
+                        }
                     }
                     // Naturwissenschaftlicher Schwerpunkt
                     if (cntSci >= 2) {
                         const writtenSciInQ = activeSubs.some(s => ['BI', 'PH', 'CH', 'IF'].includes(s.code) && selections[s.code].slice(2, 6).some(v => v === 'S' || v === 'LK'));
-                        if (writtenSciInQ) hasWrittenFocus = true;
+                        if (!writtenSciInQ) {
+                            sciError = "Fehler: Beim naturwissenschaftlichen Schwerpunkt muss mindestens ein Fach des Schwerpunktes schriftlich in der Q-Phase belegt sein.";
+                        } else {
+                            isValidFocus = true;
+                        }
                     }
-                    if (!hasWrittenFocus) {
-                        msgs.push("Fehler: Bei der Wahl eines Schwerpunktes muss mindestens ein Fach des Schwerpunktes schriftlich in der Q-Phase belegt sein.");
+                    
+                    if (!isValidFocus) {
+                        if (cntLang >= 2 && cntSci < 2) {
+                            msgs.push(langError);
+                        } else if (cntSci >= 2 && cntLang < 2) {
+                            msgs.push(sciError);
+                        } else {
+                            msgs.push("Fehler: Weder der sprachliche (beide FS schriftl.) noch der naturwissenschaftliche Schwerpunkt (1 NW/IF schriftl.) ist gültig belegt.");
+                        }
                     }
                 }
     
