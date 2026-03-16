@@ -427,8 +427,8 @@
                 activeSubs.forEach(sub => {
                     if (sub.code === 'D' || sub.code === 'M' || sub.type === 'lang') {
                         const row = selections[sub.code];
-                        if (row[0] === 'M') msgs.push("Fehler: " + sub.name + " muss in EF.1 schriftlich belegt werden.");
-                        if (row[1] === 'M') msgs.push("Fehler: " + sub.name + " muss in EF.2 schriftlich belegt werden.");
+                        if (row[0] !== '' && row[0] !== 'S') msgs.push("Fehler: " + sub.name + " muss in EF.1 schriftlich belegt werden.");
+                        if (row[1] !== '' && row[1] !== 'S') msgs.push("Fehler: " + sub.name + " muss in EF.2 schriftlich belegt werden.");
                     }
                 });
 
@@ -459,11 +459,35 @@
                 if (!hasClassNW) msgs.push("Fehler: Eine klassische Naturwissenschaft (Bi, Ph, Ch) muss durchgehend belegt sein.");
     
                 // --- Languages ---
-                const hasLang = activeSubs.filter(s => s.type === 'lang').some(s => selections[s.code].every(c => c !== ''));
-                if (!hasLang) msgs.push("Fehler: Mindestens eine Fremdsprache muss durchgehend belegt sein.");
+                const continuousLangs = activeSubs.filter(s => s.type === 'lang' && selections[s.code].every(c => c !== ''));
+                if (continuousLangs.length === 0) {
+                    msgs.push("Fehler: Mindestens eine Fremdsprache muss durchgehend belegt sein.");
+                } else {
+                    const isAnyWrittenInQ = continuousLangs.some(s => selections[s.code].slice(2, 6).some(c => c === 'S' || c === 'LK'));
+                    if (!isAnyWrittenInQ) {
+                        msgs.push("Fehler: Es muss mindestens eine in der Q-Phase durchgängig belegte Fremdsprache schriftlich belegt werden.");
+                    }
+                }
                 
                 // --- Focus (Schwerpunkt) ---
-                if (cntLang < 2 && cntSci < 2) msgs.push("Fehler: Schwerpunkt fehlt (2 FS oder 2 NW/IF in Q-Phase).");
+                if (cntLang < 2 && cntSci < 2) {
+                    msgs.push("Fehler: Schwerpunkt fehlt (2 FS oder 2 NW/IF in Q-Phase).");
+                } else {
+                    let hasWrittenFocus = false;
+                    // Sprachlicher Schwerpunkt
+                    if (cntLang >= 2) {
+                        const writtenLangInQ = activeSubs.some(s => s.type === 'lang' && selections[s.code].slice(2, 6).some(v => v === 'S' || v === 'LK'));
+                        if (writtenLangInQ) hasWrittenFocus = true;
+                    }
+                    // Naturwissenschaftlicher Schwerpunkt
+                    if (cntSci >= 2) {
+                        const writtenSciInQ = activeSubs.some(s => ['BI', 'PH', 'CH', 'IF'].includes(s.code) && selections[s.code].slice(2, 6).some(v => v === 'S' || v === 'LK'));
+                        if (writtenSciInQ) hasWrittenFocus = true;
+                    }
+                    if (!hasWrittenFocus) {
+                        msgs.push("Fehler: Bei der Wahl eines Schwerpunktes muss mindestens ein Fach des Schwerpunktes schriftlich in der Q-Phase belegt sein.");
+                    }
+                }
     
                 // --- Religion / Philo (Allow Drop in Q2) ---
                 // Check EF.1 - Q1.2 (Indices 0, 1, 2, 3)
